@@ -1,6 +1,8 @@
 package com.innowise.internship.service;
 
+import com.innowise.internship.dto.UserDto;
 import com.innowise.internship.entitiy.User;
+import com.innowise.internship.mapper.UserMapper;
 import com.innowise.internship.dao.UserRepository;
 import com.innowise.internship.specification.UserSpecification;
 import jakarta.transaction.Transactional;
@@ -15,35 +17,46 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, UserMapper userMapper) {
         this.userRepository = userRepository;
+        this.userMapper = userMapper;
     }
 
     @Transactional
-    public User createUser(User user) {
-        return userRepository.save(user);
+    public UserDto createUser(UserDto userDto) {
+        User user = userMapper.toEntity(userDto);
+        User savedUser = userRepository.save(user);
+        return userMapper.toDto(savedUser);
     }
 
-    public Optional<User> getUserById(Long id) {
-        return userRepository.findById(id);
+    public Optional<UserDto> getUserById(Long id) {
+        return userRepository.findById(id).map(userMapper::toDto);
     }
 
-    public Page<User> getAllUsers(Pageable pageable, String name, String surname) {
+    public Page<UserDto> getAllUsers(Pageable pageable, String name, String surname) {
         Specification<User> spec = UserSpecification.hasName(name)
                 .and(UserSpecification.hasSurname(surname));
-        return userRepository.findAll(spec, pageable);
+        return userRepository.findAll(spec, pageable).map(userMapper::toDto);
     }
 
     @Transactional
-    public User updateUser(Long id, User updatedUser) {
+    public UserDto updateUser(Long id, UserDto updatedUserDto) {
         return userRepository.findById(id).map(user -> {
+            User updatedUser = userMapper.toEntity(updatedUserDto);
             if (updatedUser.getName() != null) user.setName(updatedUser.getName());
             if (updatedUser.getSurname() != null) user.setSurname(updatedUser.getSurname());
             if (updatedUser.getBirthDate() != null) user.setBirthDate(updatedUser.getBirthDate());
             if (updatedUser.getEmail() != null) user.setEmail(updatedUser.getEmail());
-            return userRepository.save(user);
+            User savedUser = userRepository.save(user);
+            return userMapper.toDto(savedUser);
         }).orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    @Transactional
+    public void deleteUser(Long id) {
+        userRepository.deleteById(id);
     }
 
     @Transactional
