@@ -28,7 +28,7 @@ public class User {
     private String name;
     private String surname;
 
-    @Column(name = "birth_date")
+    @Column()
     private LocalDate birthDate;
 
     @Column(unique = true, nullable = false)
@@ -37,14 +37,14 @@ public class User {
     private Boolean active;
 
     @CreatedDate
-    @Column(name = "created_at", updatable = false)
+    @Column(updatable = false)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
-    @Column(name = "updated_at")
+    @Column()
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.ALL)
     private List<PaymentCard> paymentCards;
 
 }
