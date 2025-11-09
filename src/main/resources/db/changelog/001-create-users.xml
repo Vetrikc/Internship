@@ -13,11 +13,6 @@
         <column name="created_at" type="TIMESTAMP"/>
         <column name="updated_at" type="TIMESTAMP"/>
     </createTable>
-
-    <createIndex tableName="users" indexName="idx_users_email">
-        <column name="email"/>
-    </createIndex>
-
     <createIndex tableName="users" indexName="idx_users_active">
         <column name="active"/>
     </createIndex>
