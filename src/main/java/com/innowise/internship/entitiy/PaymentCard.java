@@ -39,16 +39,16 @@ public class PaymentCard {
     @Column(nullable = false)
     private String holder;
 
-    @Column(name = "expiration_date", nullable = false)
+    @Column(nullable = false)
     private LocalDate expirationDate;
 
     private Boolean active;
 
     @CreatedDate
-    @Column(name = "created_at", updatable = false)
+    @Column( updatable = false)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
-    @Column(name = "updated_at")
+    @Column()
     private LocalDateTime updatedAt;
 }

@@ -30,8 +30,4 @@
     <createIndex tableName="payment_cards" indexName="idx_cards_user_id">
         <column name="user_id"/>
     </createIndex>
-
-    <createIndex tableName="payment_cards" indexName="idx_cards_active">
-        <column name="active"/>
-    </createIndex>
 </changeSet>
