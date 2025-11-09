@@ -1,0 +1,19 @@
+<changeSet id="001" author="vllad07">
+    <createTable tableName="users">
+        <column name="id" type="BIGINT" autoIncrement="true">
+            <constraints primaryKey="true" nullable="false"/>
+        </column>
+        <column name="name" type="VARCHAR(255)"/>
+        <column name="surname" type="VARCHAR(255)"/>
+        <column name="birth_date" type="DATE"/>
+        <column name="email" type="VARCHAR(255)">
+            <constraints nullable="false" unique="true"/>
+        </column>
+        <column name="active" type="BOOLEAN"/>
+        <column name="created_at" type="TIMESTAMP"/>
+        <column name="updated_at" type="TIMESTAMP"/>
+    </createTable>
+    <createIndex tableName="users" indexName="idx_users_active">
+        <column name="active"/>
+    </createIndex>
+</changeSet>
