@@ -28,7 +28,6 @@ public class User {
     private String name;
     private String surname;
 
-    @Column()
     private LocalDate birthDate;
 
     @Column(unique = true, nullable = false)
@@ -41,7 +40,6 @@ public class User {
     private LocalDateTime createdAt;
 
     @LastModifiedDate
-    @Column()
     private LocalDateTime updatedAt;
 
     @OneToMany(cascade = CascadeType.ALL)
