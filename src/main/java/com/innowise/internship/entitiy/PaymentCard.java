@@ -45,10 +45,9 @@ public class PaymentCard {
     private Boolean active;
 
     @CreatedDate
-    @Column( updatable = false)
+    @Column(updatable = false)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
-    @Column()
     private LocalDateTime updatedAt;
 }
