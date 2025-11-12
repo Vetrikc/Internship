@@ -1,69 +1,94 @@
 package com.innowise.internship.service;
 
+import com.innowise.internship.dto.PaymentCardDto;
 import com.innowise.internship.entitiy.PaymentCard;
 import com.innowise.internship.entitiy.User;
-import com.innowise.internship.dao.PaymentCardRepository;
-import com.innowise.internship.dao.UserRepository;
 import com.innowise.internship.exception.CardLimitExceededException;
 import com.innowise.internship.exception.CardNotFoundException;
+import com.innowise.internship.exception.InvalidRequestException;
+import com.innowise.internship.mapper.PaymentCardMapper;
+import com.innowise.internship.dao.PaymentCardRepository;
+import com.innowise.internship.dao.UserRepository;
 import com.innowise.internship.exception.MissingUserException;
-import com.innowise.internship.exception.UserNotFoundException;
 import jakarta.transaction.Transactional;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class PaymentCardService {
 
     private final PaymentCardRepository paymentCardRepository;
     private final UserRepository userRepository;
+    private final PaymentCardMapper paymentCardMapper;
+    private final CacheManager cacheManager;
 
-    public PaymentCardService(PaymentCardRepository paymentCardRepository, UserRepository userRepository) {
+    public PaymentCardService(PaymentCardRepository paymentCardRepository, UserRepository userRepository, PaymentCardMapper paymentCardMapper, CacheManager cacheManager) {
         this.paymentCardRepository = paymentCardRepository;
         this.userRepository = userRepository;
+        this.paymentCardMapper = paymentCardMapper;
+        this.cacheManager = cacheManager;
     }
 
     @Transactional
-    public PaymentCard createCard(PaymentCard card) {
-        if (card.getUser() == null || card.getUser().getId() == null) {
-            throw new MissingUserException("User required");
+    @CacheEvict(value = "users", key = "#cardDto.userId")
+    public PaymentCardDto createCard(PaymentCardDto cardDto) {
+        Long userId = cardDto.getUserId();
+        if (userId == null) {
+            throw new MissingUserException("User ID required");
         }
-        Long userId = card.getUser().getId();
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new InvalidRequestException("User not found"));
         long count = paymentCardRepository.countByUserId(userId);
         if (count >= 5) {
-            throw new CardLimitExceededException("User cannot have more than 5 cards");
+            throw new CardLimitExceededException();
         }
+        PaymentCard card = paymentCardMapper.toEntity(cardDto);
         card.setUser(user);
         user.getPaymentCards().add(card);
         userRepository.save(user);
-        return card;
+        return paymentCardMapper.toDto(card);
     }
 
-    public Optional<PaymentCard> getCardById(Long id) {
-        return paymentCardRepository.findById(id);
+    public Optional<PaymentCardDto> getCardById(Long id) {
+        return paymentCardRepository.findById(id).map(paymentCardMapper::toDto);
     }
 
-    public Page<PaymentCard> getAllCards(Pageable pageable) {
-        return paymentCardRepository.findAll(pageable);
+    public Page<PaymentCardDto> getAllCards(Pageable pageable) {
+        return paymentCardRepository.findAll(pageable).map(paymentCardMapper::toDto);
     }
 
-    public List<PaymentCard> getCardsByUserId(Long userId) {
-        return paymentCardRepository.findByUserId(userId);
+    public List<PaymentCardDto> getCardsByUserId(Long userId) {
+        return paymentCardRepository.findByUserId(userId).stream()
+                .map(paymentCardMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @Transactional
-    public PaymentCard updateCard(Long id, PaymentCard updatedCard) {
+    @CacheEvict(value = "users", key = "#result.userId")
+    public PaymentCardDto updateCard(Long id, PaymentCardDto updatedCardDto) {
         return paymentCardRepository.findById(id).map(card -> {
+            PaymentCard updatedCard = paymentCardMapper.toEntity(updatedCardDto);
             if (updatedCard.getNumber() != null) card.setNumber(updatedCard.getNumber());
             if (updatedCard.getHolder() != null) card.setHolder(updatedCard.getHolder());
             if (updatedCard.getExpirationDate() != null) card.setExpirationDate(updatedCard.getExpirationDate());
-            return paymentCardRepository.save(card);
-        }).orElseThrow(() -> new CardNotFoundException("Card not found"));
+            PaymentCard savedCard = paymentCardRepository.save(card);
+            return paymentCardMapper.toDto(savedCard);
+        }).orElseThrow(() -> new CardNotFoundException(id));
+    }
+
+    @Transactional
+    public void deleteCard(Long id) {
+        paymentCardRepository.findById(id).ifPresent(card -> {
+            Long userId = card.getUser().getId();
+            paymentCardRepository.deleteById(id);
+            cacheManager.getCache("users").evict(userId);
+        });
     }
 
     @Transactional
@@ -71,6 +96,7 @@ public class PaymentCardService {
         paymentCardRepository.findById(id).ifPresent(card -> {
             card.setActive(true);
             paymentCardRepository.save(card);
+            cacheManager.getCache("users").evict(card.getUser().getId());
         });
     }
 
@@ -79,6 +105,16 @@ public class PaymentCardService {
         paymentCardRepository.findById(id).ifPresent(card -> {
             card.setActive(false);
             paymentCardRepository.save(card);
+        });
+    }
+
+    // Helper to get userId for evict
+    private void evictUserCache(Long cardId) {
+        paymentCardRepository.findById(cardId).ifPresent(card -> {
+            User user = card.getUser();
+            if (user != null && user.getId() != null) {
+                cacheManager.getCache("users").evict(user.getId());
+            }
         });
     }
 }
