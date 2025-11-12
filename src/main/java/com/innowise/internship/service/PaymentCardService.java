@@ -9,6 +9,7 @@ import com.innowise.internship.exception.InvalidRequestException;
 import com.innowise.internship.mapper.PaymentCardMapper;
 import com.innowise.internship.dao.PaymentCardRepository;
 import com.innowise.internship.dao.UserRepository;
+import com.innowise.internship.exception.MissingUserException;
 import jakarta.transaction.Transactional;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
@@ -40,7 +41,7 @@ public class PaymentCardService {
     public PaymentCardDto createCard(PaymentCardDto cardDto) {
         Long userId = cardDto.getUserId();
         if (userId == null) {
-            throw new InvalidRequestException("User ID required");
+            throw new MissingUserException("User ID required");
         }
         User user = userRepository.findById(userId).orElseThrow(() -> new InvalidRequestException("User not found"));
         long count = paymentCardRepository.countByUserId(userId);

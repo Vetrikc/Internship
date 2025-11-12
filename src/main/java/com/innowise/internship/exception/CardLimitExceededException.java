@@ -8,4 +8,7 @@ public class CardLimitExceededException extends RuntimeException {
     public CardLimitExceededException() {
         super("User cannot have more than 5 cards");
     }
+    public CardLimitExceededException(String message) {
+        super(message);
+    }
 }
