@@ -6,9 +6,9 @@ import com.innowise.internship.dao.PaymentCardRepository;
 import com.innowise.internship.dao.UserRepository;
 import com.innowise.internship.exception.CardLimitExceededException;
 import com.innowise.internship.exception.CardNotFoundException;
+import com.innowise.internship.exception.MissingUserException;
 import com.innowise.internship.exception.UserNotFoundException;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,7 +30,7 @@ public class PaymentCardService {
     @Transactional
     public PaymentCard createCard(PaymentCard card) {
         if (card.getUser() == null || card.getUser().getId() == null) {
-            throw new RuntimeException("User required");
+            throw new MissingUserException("User required");
         }
         Long userId = card.getUser().getId();
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found"));
