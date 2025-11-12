@@ -12,14 +12,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "payment_cards", indexes = {
-        @Index(name = "idx_cards_user_id", columnList = "user_id"),
-        @Index(name = "idx_cards_active", columnList = "active")
+        @Index(name = "idx_cards_user_id", columnList = "user_id")
 })
 @NamedQueries({
-        @NamedQuery(name = "PaymentCard.findByUserId", query = "SELECT p FROM PaymentCard p WHERE p.user.id = :userId")
-})
-@NamedNativeQueries({
-        @NamedNativeQuery(name = "PaymentCard.countByUserId", query = "SELECT COUNT(*) FROM payment_cards WHERE user_id = :userId")
+        @NamedQuery(name = "PaymentCard.findByUserId",
+                query = "SELECT p FROM PaymentCard p WHERE p.user.id = :userId")
 })
 @EntityListeners(AuditingEntityListener.class)
 @Getter

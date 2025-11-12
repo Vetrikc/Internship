@@ -4,6 +4,9 @@ import com.innowise.internship.entitiy.PaymentCard;
 import com.innowise.internship.entitiy.User;
 import com.innowise.internship.dao.PaymentCardRepository;
 import com.innowise.internship.dao.UserRepository;
+import com.innowise.internship.exception.CardLimitExceededException;
+import com.innowise.internship.exception.CardNotFoundException;
+import com.innowise.internship.exception.UserNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -30,10 +33,10 @@ public class PaymentCardService {
             throw new RuntimeException("User required");
         }
         Long userId = card.getUser().getId();
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found"));
         long count = paymentCardRepository.countByUserId(userId);
         if (count >= 5) {
-            throw new RuntimeException("User cannot have more than 5 cards");
+            throw new CardLimitExceededException("User cannot have more than 5 cards");
         }
         card.setUser(user);
         user.getPaymentCards().add(card);
@@ -60,7 +63,7 @@ public class PaymentCardService {
             if (updatedCard.getHolder() != null) card.setHolder(updatedCard.getHolder());
             if (updatedCard.getExpirationDate() != null) card.setExpirationDate(updatedCard.getExpirationDate());
             return paymentCardRepository.save(card);
-        }).orElseThrow(() -> new RuntimeException("Card not found"));
+        }).orElseThrow(() -> new CardNotFoundException("Card not found"));
     }
 
     @Transactional

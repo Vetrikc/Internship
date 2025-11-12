@@ -1,7 +1,8 @@
 package com.innowise.internship.service;
 
-import com.innowise.internship.entitiy.User;
 import com.innowise.internship.dao.UserRepository;
+import com.innowise.internship.entitiy.User;
+import com.innowise.internship.exception.UserNotFoundException;
 import com.innowise.internship.specification.UserSpecification;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
@@ -43,7 +44,7 @@ public class UserService {
             if (updatedUser.getBirthDate() != null) user.setBirthDate(updatedUser.getBirthDate());
             if (updatedUser.getEmail() != null) user.setEmail(updatedUser.getEmail());
             return userRepository.save(user);
-        }).orElseThrow(() -> new RuntimeException("User not found"));
+        }).orElseThrow(() -> new UserNotFoundException("User not found"));
     }
 
     @Transactional
