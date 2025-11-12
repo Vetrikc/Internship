@@ -4,6 +4,8 @@ import com.innowise.internship.dto.UserDto;
 import com.innowise.internship.entitiy.User;
 import com.innowise.internship.mapper.UserMapper;
 import com.innowise.internship.dao.UserRepository;
+import com.innowise.internship.entitiy.User;
+import com.innowise.internship.exception.UserNotFoundException;
 import com.innowise.internship.specification.UserSpecification;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
@@ -51,7 +53,7 @@ public class UserService {
             if (updatedUser.getEmail() != null) user.setEmail(updatedUser.getEmail());
             User savedUser = userRepository.save(user);
             return userMapper.toDto(savedUser);
-        }).orElseThrow(() -> new RuntimeException("User not found"));
+        }).orElseThrow(() -> new UserNotFoundException("User not found"));
     }
 
     @Transactional

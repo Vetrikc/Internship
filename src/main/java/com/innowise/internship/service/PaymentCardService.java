@@ -3,9 +3,13 @@ package com.innowise.internship.service;
 import com.innowise.internship.dto.PaymentCardDto;
 import com.innowise.internship.entitiy.PaymentCard;
 import com.innowise.internship.entitiy.User;
+import com.innowise.internship.exception.CardNotFoundException;
 import com.innowise.internship.mapper.PaymentCardMapper;
 import com.innowise.internship.dao.PaymentCardRepository;
 import com.innowise.internship.dao.UserRepository;
+import com.innowise.internship.exception.CardLimitExceededException;
+import com.innowise.internship.exception.CardNotFoundException;
+import com.innowise.internship.exception.UserNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,10 +38,10 @@ public class PaymentCardService {
         if (userId == null) {
             throw new RuntimeException("User ID required");
         }
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found"));
         long count = paymentCardRepository.countByUserId(userId);
         if (count >= 5) {
-            throw new RuntimeException("User cannot have more than 5 cards");
+            throw new CardLimitExceededException("User cannot have more than 5 cards");
         }
         PaymentCard card = paymentCardMapper.toEntity(cardDto);
         card.setUser(user);
@@ -69,7 +73,7 @@ public class PaymentCardService {
             if (updatedCard.getExpirationDate() != null) card.setExpirationDate(updatedCard.getExpirationDate());
             PaymentCard savedCard = paymentCardRepository.save(card);
             return paymentCardMapper.toDto(savedCard);
-        }).orElseThrow(() -> new RuntimeException("Card not found"));
+        }).orElseThrow(() -> new CardNotFoundException("Card not found"));
     }
 
     @Transactional
