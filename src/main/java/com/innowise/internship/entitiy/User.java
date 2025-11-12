@@ -12,10 +12,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "users", indexes = {
-        @Index(name = "idx_users_email", columnList = "email"),
-        @Index(name = "idx_users_active", columnList = "active")
-})
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
@@ -42,7 +38,7 @@ public class User {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
     private List<PaymentCard> paymentCards;
 
 }

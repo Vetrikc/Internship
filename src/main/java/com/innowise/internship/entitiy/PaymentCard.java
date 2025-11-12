@@ -11,15 +11,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "payment_cards", indexes = {
-        @Index(name = "idx_cards_user_id", columnList = "user_id"),
-        @Index(name = "idx_cards_active", columnList = "active")
-})
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 public class PaymentCard {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -45,5 +40,4 @@ public class PaymentCard {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
-
 }
