@@ -53,7 +53,7 @@ public class UserService {
     }
 
     @Transactional
-    @CacheEvict(value = "users", key = "#id")
+    @CachePut(value = "users", key = "#id")
     public UserDto updateUser(Long id, UserDto updatedUserDto) {
         return userRepository.findById(id).map(user -> {
             User updatedUser = userMapper.toEntity(updatedUserDto);
@@ -73,20 +73,23 @@ public class UserService {
     }
 
     @Transactional
-    @CacheEvict(value = "users", key = "#id")
-    public void activateUser(Long id) {
-        userRepository.findById(id).ifPresent(user -> {
+    @CachePut(value = "users", key = "#result.id")
+    public UserDto activateUser(Long id) {
+        return userRepository.findById(id).map(user -> {
             user.setActive(true);
-            userRepository.save(user);
-        });
+            User savedUser = userRepository.save(user);
+            return userMapper.toDto(savedUser);
+        }).orElseThrow(() -> new UserNotFoundException(id));
     }
 
     @Transactional
-    @CacheEvict(value = "users", key = "#id")
-    public void deactivateUser(Long id) {
-        userRepository.findById(id).ifPresent(user -> {
+    @CachePut(value = "users", key = "#result.id")
+    public UserDto deactivateUser(Long id) {
+        return userRepository.findById(id).map(user -> {
             user.setActive(false);
-            userRepository.save(user);
-        });
+            User savedUser = userRepository.save(user);
+            Hibernate.initialize(savedUser.getPaymentCards()); // Ensure full load for consistent caching
+            return userMapper.toDto(savedUser);
+        }).orElseThrow(() -> new UserNotFoundException(id));
     }
 }

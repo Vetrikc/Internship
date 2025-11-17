@@ -86,38 +86,32 @@ public class PaymentCardService {
     }
 
     @Transactional
-    public void deleteCard(Long id) {
-        paymentCardRepository.findById(id).ifPresent(card -> {
-            Long userId = card.getUser().getId();
+    @CacheEvict(value = "users", key = "#result.userId")
+    public PaymentCardDto deleteCard(Long id) {
+        return paymentCardRepository.findById(id).map(card -> {
+            PaymentCardDto deletedDto = paymentCardMapper.toDto(card); // Копируем DTO перед удалением
             paymentCardRepository.deleteById(id);
-            cacheManager.getCache("users").evict(userId);
-        });
+            return deletedDto; // Возвращаем копию удалённой карты
+        }).orElseThrow(() -> new CardNotFoundException(id));
     }
 
     @Transactional
-    public void activateCard(Long id) {
-        paymentCardRepository.findById(id).ifPresent(card -> {
+    @CacheEvict(value = "users", key = "#result.userId")
+    public PaymentCardDto activateCard(Long id) {
+        return paymentCardRepository.findById(id).map(card -> {
             card.setActive(true);
-            paymentCardRepository.save(card);
-            cacheManager.getCache("users").evict(card.getUser().getId());
-        });
+            PaymentCard savedCard = paymentCardRepository.save(card);
+            return paymentCardMapper.toDto(savedCard); // Возвращаем обновлённый DTO
+        }).orElseThrow(() -> new CardNotFoundException(id));
     }
 
     @Transactional
-    public void deactivateCard(Long id) {
-        paymentCardRepository.findById(id).ifPresent(card -> {
+    @CacheEvict(value = "users", key = "#result.userId")
+    public PaymentCardDto deactivateCard(Long id) {
+        return paymentCardRepository.findById(id).map(card -> {
             card.setActive(false);
-            paymentCardRepository.save(card);
-        });
-    }
-
-    // Helper to get userId for evict
-    private void evictUserCache(Long cardId) {
-        paymentCardRepository.findById(cardId).ifPresent(card -> {
-            User user = card.getUser();
-            if (user != null && user.getId() != null) {
-                cacheManager.getCache("users").evict(user.getId());
-            }
-        });
+            PaymentCard savedCard = paymentCardRepository.save(card);
+            return paymentCardMapper.toDto(savedCard); // Возвращаем обновлённый DTO
+        }).orElseThrow(() -> new CardNotFoundException(id));
     }
 }
