@@ -55,10 +55,10 @@ jobs:
       # 3. Сборка и тесты (Gradle)
       - name: Build & Test
         env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/mydb
+          SPRING_DATASOURCE_URL: dbc:postgresql://postgres:5432/mydb
           SPRING_DATASOURCE_USERNAME: myuser
           SPRING_DATASOURCE_PASSWORD: mypassword
-          SPRING_REDIS_HOST: localhost
+          SPRING_REDIS_HOST: redis
           SPRING_REDIS_PORT: 6379
         run: ./gradlew clean build test
 
