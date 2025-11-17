@@ -1,15 +1,15 @@
 package com.innowise.internship.service;
 
+import com.innowise.internship.dao.PaymentCardRepository;
+import com.innowise.internship.dao.UserRepository;
 import com.innowise.internship.dto.PaymentCardDto;
 import com.innowise.internship.entitiy.PaymentCard;
 import com.innowise.internship.entitiy.User;
-import com.innowise.internship.exception.CardNotFoundException;
-import com.innowise.internship.mapper.PaymentCardMapper;
-import com.innowise.internship.dao.PaymentCardRepository;
-import com.innowise.internship.dao.UserRepository;
 import com.innowise.internship.exception.CardLimitExceededException;
+import com.innowise.internship.exception.CardNotFoundException;
 import com.innowise.internship.exception.MissingUserException;
 import com.innowise.internship.exception.UserNotFoundException;
+import com.innowise.internship.mapper.PaymentCardMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -49,14 +49,17 @@ public class PaymentCardService {
         userRepository.save(user);
         return paymentCardMapper.toDto(card);
     }
+
     @Transactional
     public Optional<PaymentCardDto> getCardById(Long id) {
         return paymentCardRepository.findById(id).map(paymentCardMapper::toDto);
     }
+
     @Transactional
     public Page<PaymentCardDto> getAllCards(Pageable pageable) {
         return paymentCardRepository.findAll(pageable).map(paymentCardMapper::toDto);
     }
+
     @Transactional
     public List<PaymentCardDto> getCardsByUserId(Long userId) {
         return paymentCardRepository.findByUserId(userId).stream()
