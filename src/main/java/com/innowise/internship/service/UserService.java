@@ -4,6 +4,8 @@ import com.innowise.internship.dto.UserDto;
 import com.innowise.internship.entitiy.User;
 import com.innowise.internship.mapper.UserMapper;
 import com.innowise.internship.dao.UserRepository;
+import com.innowise.internship.entitiy.User;
+import com.innowise.internship.exception.UserNotFoundException;
 import com.innowise.internship.specification.UserSpecification;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
@@ -30,11 +32,11 @@ public class UserService {
         User savedUser = userRepository.save(user);
         return userMapper.toDto(savedUser);
     }
-
+    @Transactional
     public Optional<UserDto> getUserById(Long id) {
         return userRepository.findById(id).map(userMapper::toDto);
     }
-
+    @Transactional
     public Page<UserDto> getAllUsers(Pageable pageable, String name, String surname) {
         Specification<User> spec = UserSpecification.hasName(name)
                 .and(UserSpecification.hasSurname(surname));
@@ -51,7 +53,7 @@ public class UserService {
             if (updatedUser.getEmail() != null) user.setEmail(updatedUser.getEmail());
             User savedUser = userRepository.save(user);
             return userMapper.toDto(savedUser);
-        }).orElseThrow(() -> new RuntimeException("User not found"));
+        }).orElseThrow(() -> new UserNotFoundException("User not found"));
     }
 
     @Transactional

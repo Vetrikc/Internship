@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 public class CardLimitExceededException extends RuntimeException {
-    public CardLimitExceededException() {
-        super("User cannot have more than 5 cards");
+    public CardLimitExceededException(String message) {
+        super(message);
     }
 }
