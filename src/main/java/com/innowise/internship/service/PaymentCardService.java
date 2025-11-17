@@ -49,15 +49,15 @@ public class PaymentCardService {
         userRepository.save(user);
         return paymentCardMapper.toDto(card);
     }
-
+    @Transactional
     public Optional<PaymentCardDto> getCardById(Long id) {
         return paymentCardRepository.findById(id).map(paymentCardMapper::toDto);
     }
-
+    @Transactional
     public Page<PaymentCardDto> getAllCards(Pageable pageable) {
         return paymentCardRepository.findAll(pageable).map(paymentCardMapper::toDto);
     }
-
+    @Transactional
     public List<PaymentCardDto> getCardsByUserId(Long userId) {
         return paymentCardRepository.findByUserId(userId).stream()
                 .map(paymentCardMapper::toDto)
