@@ -32,7 +32,7 @@ public class PaymentCardController {
     public ResponseEntity<PaymentCardDto> getCardById(@PathVariable Long id) {
         return paymentCardService.getCardById(id)
                 .map(cardDto -> new ResponseEntity<>(cardDto, HttpStatus.OK))
-                .orElseThrow(() -> new CardNotFoundException(id));
+                .orElseThrow(() -> new CardNotFoundException("Card not found id:" + id));
     }
 
     @GetMapping
