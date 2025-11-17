@@ -32,11 +32,11 @@ public class UserService {
         User savedUser = userRepository.save(user);
         return userMapper.toDto(savedUser);
     }
-
+    @Transactional
     public Optional<UserDto> getUserById(Long id) {
         return userRepository.findById(id).map(userMapper::toDto);
     }
-
+    @Transactional
     public Page<UserDto> getAllUsers(Pageable pageable, String name, String surname) {
         Specification<User> spec = UserSpecification.hasName(name)
                 .and(UserSpecification.hasSurname(surname));
