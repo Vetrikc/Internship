@@ -37,14 +37,22 @@ public class UserService {
         return userMapper.toDto(savedUser);
     }
 
+
+
+
     @Cacheable(value = "users", key = "#id")
-    @Transactional
-    public Optional<UserDto> getUserById(Long id) {
+    @Transactional()
+    protected Optional<User> getUserEntityById(Long id) {
         return userRepository.findById(id).map(user -> {
-            Hibernate.initialize(user.getPaymentCards()); // Force load cards for caching full info
-            return userMapper.toDto(user);
+            Hibernate.initialize(user.getPaymentCards());
+            return user;
         });
     }
+
+    public Optional<UserDto> getUserById(Long id) {
+        return getUserEntityById(id).map(userMapper::toDto);
+    }
+
     @Transactional
     public Page<UserDto> getAllUsers(Pageable pageable, String name, String surname) {
         Specification<User> spec = UserSpecification.hasName(name)
