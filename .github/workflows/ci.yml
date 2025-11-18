@@ -51,6 +51,12 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: ./gradlew build sonar --info
 
+      - name: Build Docker image
+        run: docker build -t my-spring-app .
+
+      - name: Save Docker image to tar
+        run: docker save -o my-spring-app.tar my-spring-app
+
       # 5. Использование готового Docker-образа
       - name: Load existing Docker image
         run: docker load < my-spring-app.tar
