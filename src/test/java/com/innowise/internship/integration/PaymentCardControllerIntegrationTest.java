@@ -5,7 +5,6 @@ import com.innowise.internship.dao.UserRepository;
 import com.innowise.internship.dto.PaymentCardDto;
 import com.innowise.internship.entitiy.PaymentCard;
 import com.innowise.internship.entitiy.User;
-import com.redis.testcontainers.RedisContainer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
