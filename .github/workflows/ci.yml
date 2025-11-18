@@ -70,7 +70,7 @@ jobs:
             -Dsonar.projectKey=my_project_key
             -Dsonar.organization=my_org
             -Dsonar.host.url=https://sonarcloud.io
-            -Dsonar.login=0038266fc9fe52d924a8ca2dc0e231bf0b76e4f1
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
       # 5. Использование готового Docker-образа
       - name: Load existing Docker image
