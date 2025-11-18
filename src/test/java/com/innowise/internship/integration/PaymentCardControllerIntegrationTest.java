@@ -34,35 +34,27 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
-@Testcontainers  // ← обязательно!
+@Testcontainers
 class PaymentCardControllerIntegrationTest {
 
-    // === PostgreSQL — всё ок ===
     @Container
     static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("testdb")
             .withUsername("user")
             .withPassword("password");
 
-    // === Redis — ИСПРАВЛЕННАЯ ВЕРСИЯ ===
     @Container
     static final GenericContainer<?> redis = new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
             .withExposedPorts(6379)
-            // Эти команды отключают ненужное сохранение — ускоряют старт
             .withCommand("--save", "", "--appendonly", "no")
-            // Самое важное — правильная стратегия ожидания!
             .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(30)));
-    // Альтернатива (ещё надёжнее):
-    // .waitingFor(Wait.forLogMessage(".*Ready to accept connections.*\\n", 1));
 
-    // === Динамически подменяем свойства Spring Boot ===
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
 
-        // ← Это то, чего тебе не хватало!
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", redis::getFirstMappedPort);
     }
