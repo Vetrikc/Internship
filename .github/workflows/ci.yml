@@ -54,7 +54,7 @@ jobs:
 
       # 3. Сборка и тесты (Gradle)
       - name: Build & Test
-        env:
+        #env:
           #SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mydb
           #SPRING_DATASOURCE_USERNAME: myuser
           #SPRING_DATASOURCE_PASSWORD: mypassword
