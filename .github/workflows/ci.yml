@@ -64,6 +64,6 @@ jobs:
       # 6. Тег и push в DockerHub (или другой registry)
       - name: Push Docker image
         run: |
-          echo "290307Vs!" | docker login -u "vetrikc" --password-stdin
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
           docker tag my-spring-app:latest myrepo/my-spring-app:${{ github.sha }}
           docker push myrepo/my-spring-app:${{ github.sha }}
