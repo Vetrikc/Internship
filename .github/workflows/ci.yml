@@ -64,14 +64,22 @@ jobs:
 
       # 4. Анализ кода SonarQube
       - name: SonarQube Scan
-        uses: sonarsource/sonarcloud-github-action@v2
+        uses: actions/cache@v4
         with:
-          args: >
-            -Dsonar.projectKey=my_project_key
-            -Dsonar.organization=my_org
-            -Dsonar.host.url=https://sonarcloud.io
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
 
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+            path: ~/.gradle/caches
+            key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+            restore-keys: ${{ runner.os }}-gradle
+      - name: Build and analyze
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          run: ./gradlew build sonar --info
       # 5. Использование готового Docker-образа
       - name: Load existing Docker image
         run: docker load < my-spring-app.tar
