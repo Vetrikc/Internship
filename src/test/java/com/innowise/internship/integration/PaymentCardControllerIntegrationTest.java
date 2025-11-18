@@ -22,10 +22,12 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import java.time.Duration;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,7 +46,9 @@ class PaymentCardControllerIntegrationTest {
     @Container
     static GenericContainer<?> redis = new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
             .withExposedPorts(6379)
-            .withCommand("redis-server", "--save", "", "--appendonly", "no"); // опционально, отключаем персистенс для скорости
+            .withCommand("--save", "", "--appendonly", "no")
+            .waitingFor(Wait.forLogMessage(".*Ready to accept connections.*\\n", 1))
+            .withStartupTimeout(Duration.ofSeconds(60));
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
