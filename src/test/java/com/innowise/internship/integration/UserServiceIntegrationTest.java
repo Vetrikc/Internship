@@ -16,13 +16,18 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.annotation.Transactional;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Optional;
 
@@ -35,27 +40,35 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class UserServiceIntegrationTest {
 
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:13")
+    static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("testdb")
-            .withUsername("testuser")
-            .withPassword("testpass");
+            .withUsername("user")
+            .withPassword("password");
+
+    @Container
+    static final GenericContainer<?> redis = new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
+            .withExposedPorts(6379)
+            .withCommand("--save", "", "--appendonly", "no")
+            .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(30)));
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop"); // Ensure schema is created/dropped
+
+        registry.add("spring.data.redis.host", redis::getHost);
+        registry.add("spring.data.redis.port", redis::getFirstMappedPort);
     }
 
     @Autowired
     private UserService userService;
 
     @Autowired
-    private UserMapper userMapper;
+    private UserRepository userRepository;
 
     @Autowired
-    private UserRepository userRepository;
+    RedisTemplate<String, Object> redisTemplate;
 
     @BeforeAll
     static void beforeAll() {
@@ -120,7 +133,7 @@ class UserServiceIntegrationTest {
 
     @Test
     @Transactional
-    void testGetUserById_NotFound() {
+    void testGetUserByIdNotFound() {
         // When & Then
         Optional<UserDto> foundUser = userService.getUserById(999L);
         assertThat(foundUser).isEmpty();
@@ -191,7 +204,7 @@ class UserServiceIntegrationTest {
 
     @Test
     @Transactional
-    void testUpdateUser_NotFound() {
+    void testUpdateUserNotFound() {
         // Given
         UserDto updatedDto = new UserDto();
         updatedDto.setName("NewName");
@@ -246,7 +259,7 @@ class UserServiceIntegrationTest {
 
     @Test
     @Transactional
-    void testActivateUser_NotFound() {
+    void testActivateUserNotFound() {
         // When & Then
         assertThatThrownBy(() -> userService.activateUser(999L))
                 .isInstanceOf(UserNotFoundException.class);
@@ -277,7 +290,7 @@ class UserServiceIntegrationTest {
 
     @Test
     @Transactional
-    void testDeactivateUser_NotFound() {
+    void testDeactivateUserNotFound() {
         // When & Then
         assertThatThrownBy(() -> userService.deactivateUser(999L))
                 .isInstanceOf(UserNotFoundException.class);

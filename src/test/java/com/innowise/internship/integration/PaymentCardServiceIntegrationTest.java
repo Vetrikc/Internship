@@ -81,7 +81,7 @@ class PaymentCardServiceIntegrationTest {
     }
 
     @Test
-    void createCard_success() {
+    void createCardSuccess() {
         PaymentCardDto cardDto = new PaymentCardDto();
         cardDto.setUserId(testUser.getId());
         cardDto.setNumber("1234567890123456");
@@ -96,7 +96,7 @@ class PaymentCardServiceIntegrationTest {
     }
 
     @Test
-    void createCard_missingUserId_throwsMissingUserException() {
+    void createCardMissingUserIdThrowsMissingUserException() {
         PaymentCardDto cardDto = new PaymentCardDto();
         // No userId set
 
@@ -104,7 +104,7 @@ class PaymentCardServiceIntegrationTest {
     }
 
     @Test
-    void createCard_invalidUser_throwsInvalidRequestException() {
+    void createCardInvalidUserThrowsInvalidRequestException() {
         PaymentCardDto cardDto = new PaymentCardDto();
         cardDto.setUserId(999L); // Non-existent user
 
@@ -112,7 +112,7 @@ class PaymentCardServiceIntegrationTest {
     }
 
     @Test
-    void createCard_exceedsLimit_throwsCardLimitExceededException() {
+    void createCardExceedsLimitThrowsCardLimitExceededException() {
         // Create 5 cards
         for (int i = 0; i < 5; i++) {
             PaymentCardDto cardDto = new PaymentCardDto();
@@ -134,7 +134,7 @@ class PaymentCardServiceIntegrationTest {
     }
 
     @Test
-    void getCardById_success() {
+    void getCardByIdSuccess() {
         PaymentCard card = new PaymentCard();
         card.setUser(testUser);
         card.setNumber("1234");
@@ -150,13 +150,13 @@ class PaymentCardServiceIntegrationTest {
     }
 
     @Test
-    void getCardById_notFound_returnsEmpty() {
+    void getCardByIdNotFoundReturnsEmpty() {
         Optional<PaymentCardDto> found = paymentCardService.getCardById(999L);
         assertFalse(found.isPresent());
     }
 
     @Test
-    void getAllCards_success() {
+    void getAllCardsSuccess() {
         // Create two cards
         for (int i = 0; i < 2; i++) {
             PaymentCard card = new PaymentCard();
@@ -175,7 +175,7 @@ class PaymentCardServiceIntegrationTest {
     }
 
     @Test
-    void getCardsByUserId_success() {
+    void getCardsByUserIdSuccess() {
         // Create cards for testUser
         for (int i = 0; i < 3; i++) {
             PaymentCard card = new PaymentCard();
@@ -193,7 +193,7 @@ class PaymentCardServiceIntegrationTest {
     }
 
     @Test
-    void updateCard_success() {
+    void updateCardSuccess() {
         PaymentCard card = new PaymentCard();
         card.setUser(testUser);
         card.setNumber("old");
@@ -217,14 +217,14 @@ class PaymentCardServiceIntegrationTest {
     }
 
     @Test
-    void updateCard_notFound_throwsCardNotFoundException() {
+    void updateCardNotFoundThrowsCardNotFoundException() {
         PaymentCardDto updateDto = new PaymentCardDto();
 
         assertThrows(CardNotFoundException.class, () -> paymentCardService.updateCard(999L, updateDto));
     }
 
     @Test
-    void deleteCard_success() {
+    void deleteCardSuccess() {
         PaymentCard card = new PaymentCard();
         card.setUser(testUser);
         card.setNumber("toDelete");
@@ -241,12 +241,12 @@ class PaymentCardServiceIntegrationTest {
     }
 
     @Test
-    void deleteCard_notFound_throwsCardNotFoundException() {
+    void deleteCardNotFoundThrowsCardNotFoundException() {
         assertThrows(CardNotFoundException.class, () -> paymentCardService.deleteCard(999L));
     }
 
     @Test
-    void activateCard_success() {
+    void activateCardSuccess() {
         PaymentCard card = new PaymentCard();
         card.setUser(testUser);
         card.setNumber("inactive");
@@ -264,12 +264,12 @@ class PaymentCardServiceIntegrationTest {
     }
 
     @Test
-    void activateCard_notFound_throwsCardNotFoundException() {
+    void activateCardNotFoundThrowsCardNotFoundException() {
         assertThrows(CardNotFoundException.class, () -> paymentCardService.activateCard(999L));
     }
 
     @Test
-    void deactivateCard_success() {
+    void deactivateCardSuccess() {
         PaymentCard card = new PaymentCard();
         card.setUser(testUser);
         card.setNumber("active");
@@ -287,7 +287,7 @@ class PaymentCardServiceIntegrationTest {
     }
 
     @Test
-    void deactivateCard_notFound_throwsCardNotFoundException() {
+    void deactivateCardNotFoundThrowsCardNotFoundException() {
         assertThrows(CardNotFoundException.class, () -> paymentCardService.deactivateCard(999L));
     }
 }
