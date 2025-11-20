@@ -3,7 +3,6 @@ package com.innowise.internship.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -22,9 +21,6 @@ import java.time.Duration;
 @Configuration
 public class RedisConfig {
 
-    @Value("${spring.cache.redis.time-to-live}")
-    private int TTL;
-
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
         ObjectMapper mapper = new ObjectMapper();
@@ -35,8 +31,7 @@ public class RedisConfig {
         RedisSerializer<String> keySerializer = new StringRedisSerializer();
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(valueSerializer))
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(keySerializer))
-                .entryTtl(Duration.ofMillis(TTL));
+                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(keySerializer));
 
         return RedisCacheManager.builder(redisConnectionFactory)
                 .cacheDefaults(config)
