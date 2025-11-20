@@ -39,14 +39,6 @@ public class UserController {
                 .orElseThrow(() -> new UserNotFoundException("User not found id:" + id));
     }
 
-    @GetMapping
-    public ResponseEntity<Page<UserDto>> getAllUsers(Pageable pageable,
-                                                     @RequestParam(required = false) String name,
-                                                     @RequestParam(required = false) String surname) {
-        Page<UserDto> users = userService.getAllUsers(pageable, name, surname);
-        return new ResponseEntity<>(users, HttpStatus.OK);
-    }
-
     @PutMapping("/{id}")
     public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @Valid @RequestBody UserDto userDto) {
         UserDto updatedUser = userService.updateUser(id, userDto);
@@ -57,17 +49,5 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
-
-    @PutMapping("/{id}/activate")
-    public ResponseEntity<Void> activateUser(@PathVariable Long id) {
-        userService.activateUser(id);
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
-
-    @PutMapping("/{id}/deactivate")
-    public ResponseEntity<Void> deactivateUser(@PathVariable Long id) {
-        userService.deactivateUser(id);
-        return new ResponseEntity<>(HttpStatus.OK);
     }
 }
