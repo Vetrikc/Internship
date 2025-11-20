@@ -1,9 +1,6 @@
 package com.innowise.internship.controller;
 
-import com.innowise.internship.exception.CardLimitExceededException;
-import com.innowise.internship.exception.CardNotFoundException;
-import com.innowise.internship.exception.InvalidRequestException;
-import com.innowise.internship.exception.UserNotFoundException;
+import com.innowise.internship.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -47,5 +44,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<String> handleRuntimeException(RuntimeException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<String> handleUnauthorizedException(UnauthorizedException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNAUTHORIZED);
     }
 }

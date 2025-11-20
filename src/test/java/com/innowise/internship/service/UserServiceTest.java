@@ -1,7 +1,7 @@
 package com.innowise.internship.service;
 
 import com.innowise.internship.dto.UserDto;
-import com.innowise.internship.entitiy.User;
+import com.innowise.internship.entity.User;
 import com.innowise.internship.exception.UserNotFoundException;
 import com.innowise.internship.mapper.UserMapper;
 import com.innowise.internship.dao.UserRepository;

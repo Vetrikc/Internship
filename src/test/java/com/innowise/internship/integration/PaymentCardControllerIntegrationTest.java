@@ -2,15 +2,13 @@ package com.innowise.internship.integration;
 
 import com.innowise.internship.dao.PaymentCardRepository;
 import com.innowise.internship.dao.UserRepository;
-import com.innowise.internship.dto.PaymentCardDto;
-import com.innowise.internship.entitiy.PaymentCard;
-import com.innowise.internship.entitiy.User;
+import com.innowise.internship.entity.PaymentCard;
+import com.innowise.internship.entity.User;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;

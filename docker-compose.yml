@@ -1,29 +1,50 @@
-version: "3.8"
 services:
   app:
     build: .
-    container_name: my-spring-app
+    container_name: internship-app
     ports:
       - "8080:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/mydb
-      SPRING_DATASOURCE_USERNAME: myuser
-      SPRING_DATASOURCE_PASSWORD: mypassword
+      # Подключение к основной БД
+      SPRING_DATASOURCE_MAIN_URL: jdbc:postgresql://main_db:5432/internship
+      SPRING_DATASOURCE_MAIN_USERNAME: app_user
+      SPRING_DATASOURCE_MAIN_PASSWORD: app_strong_password_2025
+
+      # Подключение к БД авторизации
+      SPRING_DATASOURCE_AUTH_URL: jdbc:postgresql://auth_db:5432/internship_auth
+      SPRING_DATASOURCE_AUTH_USERNAME: auth_user
+      SPRING_DATASOURCE_AUTH_PASSWORD: auth_super_strong_password_2025
+
       SPRING_REDIS_HOST: redis
     depends_on:
       - db
       - redis
+      - auth_db
 
   db:
     image: postgres:15
-    container_name: postgres-db
+    container_name: postgres_db
     environment:
-      POSTGRES_DB: mydb
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: internship
+      POSTGRES_USER: app_user
+      POSTGRES_PASSWORD: app_strong_password_2025
     ports:
-      - "5432:5432"
+      - "5433:5432"
+    volumes:
+      - internship:/var/lib/postgresql/data
+
+  auth_db:
+    image: postgres:15
+    container_name: postgres_auth_db
+    environment:
+      POSTGRES_DB: internship_auth
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: auth_super_strong_password_2025
+    ports:
+      - "5434:5432"
+    volumes:
+      - internship_auth:/var/lib/postgresql/data
+
   redis:
     image: redis:7.2-alpine
     container_name: redis
@@ -35,3 +56,5 @@ services:
 
 volumes:
   redis_data:
+  internship_auth:
+  internship:

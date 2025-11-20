@@ -1,4 +1,4 @@
-package com.innowise.internship.entitiy;
+package com.innowise.internship.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -9,27 +9,29 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
-@Table(name = "\"users\"")
-public class User {
-
+@Table(name = "payment_cards")
+public class PaymentCard {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
-    private String surname;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    private LocalDate birthDate;
+    @Column(nullable = false, length = 20)
+    private String number;
 
-    @Column(unique = true, nullable = false)
-    private String email;
+    @Column(nullable = false)
+    private String holder;
+
+    @Column(nullable = false)
+    private LocalDate expirationDate;
 
     private Boolean active;
 
@@ -39,8 +41,4 @@ public class User {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<PaymentCard> paymentCards = new ArrayList<>();
-
 }

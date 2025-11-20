@@ -2,8 +2,8 @@ package com.innowise.internship.integration;
 
 import com.innowise.internship.dao.PaymentCardRepository;
 import com.innowise.internship.dao.UserRepository;
-import com.innowise.internship.entitiy.PaymentCard;
-import com.innowise.internship.entitiy.User;
+import com.innowise.internship.entity.PaymentCard;
+import com.innowise.internship.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

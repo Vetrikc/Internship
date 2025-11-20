@@ -1,8 +1,8 @@
 package com.innowise.internship.service;
 
 import com.innowise.internship.dto.PaymentCardDto;
-import com.innowise.internship.entitiy.PaymentCard;
-import com.innowise.internship.entitiy.User;
+import com.innowise.internship.entity.PaymentCard;
+import com.innowise.internship.entity.User;
 import com.innowise.internship.exception.CardLimitExceededException;
 import com.innowise.internship.exception.CardNotFoundException;
 import com.innowise.internship.exception.InvalidRequestException;

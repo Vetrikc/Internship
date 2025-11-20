@@ -1,8 +1,7 @@
 package com.innowise.internship.integration;
 
 import com.innowise.internship.dao.UserRepository;
-import com.innowise.internship.dto.UserDto;
-import com.innowise.internship.entitiy.User;
+import com.innowise.internship.entity.User;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;

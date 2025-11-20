@@ -1,7 +1,7 @@
 package com.innowise.internship.service;
 
 import com.innowise.internship.dto.UserDto;
-import com.innowise.internship.entitiy.User;
+import com.innowise.internship.entity.User;
 import com.innowise.internship.exception.UserNotFoundException;
 import com.innowise.internship.mapper.UserMapper;
 import com.innowise.internship.dao.UserRepository;
@@ -36,9 +36,6 @@ public class UserService {
         User savedUser = userRepository.save(user);
         return userMapper.toDto(savedUser);
     }
-
-
-
 
     @Cacheable(value = "users", key = "#id")
     @Transactional()

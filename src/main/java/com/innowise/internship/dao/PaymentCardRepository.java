@@ -1,6 +1,6 @@
 package com.innowise.internship.dao;
 
-import com.innowise.internship.entitiy.PaymentCard;
+import com.innowise.internship.entity.PaymentCard;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;

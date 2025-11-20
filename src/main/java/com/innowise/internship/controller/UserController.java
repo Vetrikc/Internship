@@ -3,15 +3,20 @@ package com.innowise.internship.controller;
 import com.innowise.internship.dto.UserDto;
 import com.innowise.internship.exception.UserNotFoundException;
 import com.innowise.internship.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/v1/users")
+@Tag(name = "Пользователи", description = "Управление пользователями")
+@PreAuthorize("hasRole('USER')")
 public class UserController {
 
     private final UserService userService;
@@ -27,6 +32,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Получить пользователя по ID", description = "Возвращает данные пользователя")
     public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
         return userService.getUserById(id)
                 .map(userDto -> new ResponseEntity<>(userDto, HttpStatus.OK))
