@@ -1,10 +1,10 @@
 package com.innowise.internship.integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innowise.internship.dao.UserRepository;
 import com.innowise.internship.dto.UserDto;
 import com.innowise.internship.entitiy.User;
 import com.innowise.internship.exception.UserNotFoundException;
-import com.innowise.internship.mapper.UserMapper;
 import com.innowise.internship.service.UserService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -13,21 +13,29 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.annotation.Transactional;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @Testcontainers
 @SpringBootTest
@@ -35,27 +43,38 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class UserServiceIntegrationTest {
 
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:13")
+    static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("testdb")
-            .withUsername("testuser")
-            .withPassword("testpass");
+            .withUsername("user")
+            .withPassword("password");
+
+    @Container
+    static final GenericContainer<?> redis = new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
+            .withExposedPorts(6379)
+            .withCommand("--save", "", "--appendonly", "no")
+            .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(30)));
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop"); // Ensure schema is created/dropped
+
+        registry.add("spring.data.redis.host", redis::getHost);
+        registry.add("spring.data.redis.port", redis::getFirstMappedPort);
     }
+
 
     @Autowired
     private UserService userService;
 
     @Autowired
-    private UserMapper userMapper;
+    private UserRepository userRepository;
 
     @Autowired
-    private UserRepository userRepository;
+    CacheManager cacheManager;
+
+    private Cache usersCache;
 
     @BeforeAll
     static void beforeAll() {
@@ -65,15 +84,18 @@ class UserServiceIntegrationTest {
     @BeforeEach
     void setUp() {
         userRepository.deleteAll(); // Clean up before each test
+        usersCache = cacheManager.getCache("users");
+        usersCache.clear();
     }
 
     @AfterEach
     void tearDown() {
         userRepository.deleteAll(); // Clean up after each test
+        usersCache.clear();
     }
 
+
     @Test
-    @Transactional
     void testCreateUser() {
         // Given
         UserDto userDto = new UserDto();
@@ -95,10 +117,14 @@ class UserServiceIntegrationTest {
         Optional<User> savedUser = userRepository.findById(createdUser.getId());
         assertThat(savedUser).isPresent();
         assertThat(savedUser.get().getName()).isEqualTo("John");
+
+        // Then(caching)
+        UserDto cached = cacheManager.getCache("users").get(createdUser.getId(), UserDto.class);
+        assertThat(cached).isNotNull();
+        assertThat(cached.getName()).isEqualTo("John");
     }
 
     @Test
-    @Transactional
     void testGetUserById() {
         // Given
         User user = new User();
@@ -116,11 +142,26 @@ class UserServiceIntegrationTest {
         assertThat(foundUser).isPresent();
         assertThat(foundUser.get().getName()).isEqualTo("Jane");
         assertThat(foundUser.get().getSurname()).isEqualTo("Smith");
+
+        // Then(caching)
+        Optional<UserDto> user1 = userService.getUserById(savedUser.getId());
+        Optional<UserDto> user2 = userService.getUserById(savedUser.getId());
+
+        Cache cache = cacheManager.getCache("users");
+        assertThat(cache).isNotNull();
+
+        UserDto cached = cache.get(savedUser.getId(), UserDto.class);
+        assertThat(cached).isNotNull();
+        assertThat(cached.getName()).isEqualTo("Jane");
+
+        assertThat(user1).isPresent();
+        assertThat(user2).isPresent();
+        assertThat(user1.get().getId()).isEqualTo(user2.get().getId());
     }
 
     @Test
     @Transactional
-    void testGetUserById_NotFound() {
+    void testGetUserByIdNotFound() {
         // When & Then
         Optional<UserDto> foundUser = userService.getUserById(999L);
         assertThat(foundUser).isEmpty();
@@ -158,7 +199,6 @@ class UserServiceIntegrationTest {
     }
 
     @Test
-    @Transactional
     void testUpdateUser() {
         // Given
         User user = new User();
@@ -187,11 +227,16 @@ class UserServiceIntegrationTest {
         Optional<User> dbUser = userRepository.findById(savedUser.getId());
         assertThat(dbUser).isPresent();
         assertThat(dbUser.get().getName()).isEqualTo("NewName");
+
+        // Then(caching)
+        UserDto cached = cacheManager.getCache("users").get(savedUser.getId(), UserDto.class);
+        assertThat(cached).isNotNull();
+        assertThat(cached.getName()).isEqualTo("NewName");
     }
 
     @Test
     @Transactional
-    void testUpdateUser_NotFound() {
+    void testUpdateUserNotFound() {
         // Given
         UserDto updatedDto = new UserDto();
         updatedDto.setName("NewName");
@@ -202,7 +247,6 @@ class UserServiceIntegrationTest {
     }
 
     @Test
-    @Transactional
     void testDeleteUser() {
         // Given
         User user = new User();
@@ -219,10 +263,13 @@ class UserServiceIntegrationTest {
         // Then
         Optional<User> deletedUser = userRepository.findById(savedUser.getId());
         assertThat(deletedUser).isEmpty();
+
+        // Then(caching)
+        UserDto cached = cacheManager.getCache("users").get(savedUser.getId(), UserDto.class);
+        assertThat(cached).isNull();
     }
 
     @Test
-    @Transactional
     void testActivateUser() {
         // Given
         User user = new User();
@@ -242,18 +289,22 @@ class UserServiceIntegrationTest {
         Optional<User> dbUser = userRepository.findById(savedUser.getId());
         assertThat(dbUser).isPresent();
         assertThat(dbUser.get().getActive()).isTrue();
+
+        // Then(caching)
+        UserDto cached = cacheManager.getCache("users").get(activatedUser.getId(), UserDto.class);
+        assertThat(cached).isNotNull();
+        assertThat(cached.getActive()).isTrue();
     }
 
     @Test
     @Transactional
-    void testActivateUser_NotFound() {
+    void testActivateUserNotFound() {
         // When & Then
         assertThatThrownBy(() -> userService.activateUser(999L))
                 .isInstanceOf(UserNotFoundException.class);
     }
 
     @Test
-    @Transactional
     void testDeactivateUser() {
         // Given
         User user = new User();
@@ -273,11 +324,16 @@ class UserServiceIntegrationTest {
         Optional<User> dbUser = userRepository.findById(savedUser.getId());
         assertThat(dbUser).isPresent();
         assertThat(dbUser.get().getActive()).isFalse();
+
+        // Then(caching)
+        UserDto cached = cacheManager.getCache("users").get(deactivatedUser.getId(), UserDto.class);
+        assertThat(cached).isNotNull();
+        assertThat(cached.getActive()).isFalse();
     }
 
     @Test
     @Transactional
-    void testDeactivateUser_NotFound() {
+    void testDeactivateUserNotFound() {
         // When & Then
         assertThatThrownBy(() -> userService.deactivateUser(999L))
                 .isInstanceOf(UserNotFoundException.class);
