@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
+@Table(name = "payment_cards")
 public class PaymentCard {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
