@@ -44,7 +44,8 @@ dependencies {
     testImplementation "org.testcontainers:testcontainers:1.20.3"
     testImplementation "org.testcontainers:junit-jupiter:1.20.3"
     testImplementation "org.testcontainers:postgresql:1.20.3"
-    testImplementation 'com.redis.testcontainers:testcontainers-redis:1.6.4'
+    implementation 'com.redis.testcontainers:testcontainers-redis:1.6.4'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.20.0'
 }
 
 tasks.named('test') {

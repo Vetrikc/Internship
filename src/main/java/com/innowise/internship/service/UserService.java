@@ -42,15 +42,8 @@ public class UserService {
 
     @Cacheable(value = "users", key = "#id")
     @Transactional()
-    protected Optional<User> getUserEntityById(Long id) {
-        return userRepository.findById(id).map(user -> {
-            Hibernate.initialize(user.getPaymentCards());
-            return user;
-        });
-    }
-
-    public Optional<UserDto> getUserById(Long id) {
-        return getUserEntityById(id).map(userMapper::toDto);
+    public Optional<UserDto> getUserById(Long id) {  // Сделайте public, если нужно
+        return userRepository.findById(id).map(user -> userMapper.toDto(user));
     }
 
     @Transactional
