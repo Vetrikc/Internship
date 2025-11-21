@@ -1,21 +1,21 @@
 services:
   app:
     build: .
-    container_name: internship-app
+    container_name: my-spring-app
     ports:
       - "8080:8080"
     environment:
-      # Подключение к основной БД
-      SPRING_DATASOURCE_MAIN_URL: jdbc:postgresql://main_db:5432/internship
-      SPRING_DATASOURCE_MAIN_USERNAME: app_user
-      SPRING_DATASOURCE_MAIN_PASSWORD: app_strong_password_2025
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_MAIN_URL: ${SPRING_DATASOURCE_MAIN_URL}
+      SPRING_DATASOURCE_MAIN_USERNAME: ${SPRING_DATASOURCE_MAIN_USERNAME}
+      SPRING_DATASOURCE_MAIN_PASSWORD: ${SPRING_DATASOURCE_MAIN_PASSWORD}
 
       # Подключение к БД авторизации
-      SPRING_DATASOURCE_AUTH_URL: jdbc:postgresql://auth_db:5432/internship_auth
-      SPRING_DATASOURCE_AUTH_USERNAME: auth_user
-      SPRING_DATASOURCE_AUTH_PASSWORD: auth_super_strong_password_2025
+      SPRING_DATASOURCE_AUTH_URL: ${SPRING_DATASOURCE_AUTH_URL}
+      SPRING_DATASOURCE_AUTH_USERNAME: ${SPRING_DATASOURCE_AUTH_USERNAME}
+      SPRING_DATASOURCE_AUTH_PASSWORD: ${SPRING_DATASOURCE_AUTH_PASSWORD}
 
-      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_HOST: ${SPRING_REDIS_HOST}
     depends_on:
       - db
       - redis
@@ -25,9 +25,9 @@ services:
     image: postgres:15
     container_name: postgres_db
     environment:
-      POSTGRES_DB: internship
-      POSTGRES_USER: app_user
-      POSTGRES_PASSWORD: app_strong_password_2025
+      POSTGRES_DB: ${POSTGRES_MAIN_DB}
+      POSTGRES_USER: ${POSTGRES_MAIN_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_MAIN_PASSWORD}
     ports:
       - "5433:5432"
     volumes:
@@ -37,9 +37,9 @@ services:
     image: postgres:15
     container_name: postgres_auth_db
     environment:
-      POSTGRES_DB: internship_auth
-      POSTGRES_USER: auth_user
-      POSTGRES_PASSWORD: auth_super_strong_password_2025
+      POSTGRES_DB: ${POSTGRES_AUTH_DB}
+      POSTGRES_USER: ${POSTGRES_AUTH_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_AUTH_PASSWORD}
     ports:
       - "5434:5432"
     volumes:

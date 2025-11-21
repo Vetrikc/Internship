@@ -5,16 +5,23 @@ import com.innowise.internship.dao.UserRepository;
 import com.innowise.internship.dto.PaymentCardDto;
 import com.innowise.internship.entity.PaymentCard;
 import com.innowise.internship.entity.User;
+import com.innowise.internship.dto.UserDto;
+import com.innowise.internship.entity.PaymentCard;
+import com.innowise.internship.entity.User;
 import com.innowise.internship.exception.CardLimitExceededException;
 import com.innowise.internship.exception.CardNotFoundException;
 import com.innowise.internship.exception.InvalidRequestException;
 import com.innowise.internship.exception.MissingUserException;
 import com.innowise.internship.mapper.PaymentCardMapper;
 import com.innowise.internship.service.PaymentCardService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,16 +40,18 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Testcontainers
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class PaymentCardServiceIntegrationTest {
 
     @Container
     static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("testdb")
-            .withUsername("user")
+            .withUsername("test")
             .withPassword("password");
 
     @Container
@@ -75,6 +84,11 @@ class PaymentCardServiceIntegrationTest {
 
     private User testUser;
 
+    @Autowired
+    CacheManager cacheManager;
+
+    private Cache usersCache;
+
     @BeforeEach
     @Transactional
     void setUp() {
@@ -88,10 +102,18 @@ class PaymentCardServiceIntegrationTest {
         testUser.setEmail("testuser@example.com"); // Add this to satisfy the NOT NULL constraint
         // If surname or other fields are also required, set them here (e.g., testUser.setSurname("Test"));
         userRepository.save(testUser);
+
+        usersCache = cacheManager.getCache("users");
+        usersCache.clear();
+    }
+
+    @AfterEach
+    void tearDown() {
+        usersCache.clear();
     }
 
     @Test
-    void createCard_success() {
+    void createCardSuccess() {
         PaymentCardDto cardDto = new PaymentCardDto();
         cardDto.setUserId(testUser.getId());
         cardDto.setNumber("1234567890123456");
@@ -103,10 +125,14 @@ class PaymentCardServiceIntegrationTest {
 
         assertEquals(cardDto.getNumber(), created.getNumber());
         assertEquals(testUser.getId(), created.getUserId());
+
+        // Then(caching)
+        UserDto cached = cacheManager.getCache("users").get(testUser.getId(), UserDto.class);
+        assertThat(cached).isNull();
     }
 
     @Test
-    void createCard_missingUserId_throwsMissingUserException() {
+    void createCardMissingUserIdThrowsMissingUserException() {
         PaymentCardDto cardDto = new PaymentCardDto();
         // No userId set
 
@@ -114,7 +140,7 @@ class PaymentCardServiceIntegrationTest {
     }
 
     @Test
-    void createCard_invalidUser_throwsInvalidRequestException() {
+    void createCardInvalidUserThrowsInvalidRequestException() {
         PaymentCardDto cardDto = new PaymentCardDto();
         cardDto.setUserId(999L); // Non-existent user
 
@@ -122,7 +148,7 @@ class PaymentCardServiceIntegrationTest {
     }
 
     @Test
-    void createCard_exceedsLimit_throwsCardLimitExceededException() {
+    void createCardExceedsLimitThrowsCardLimitExceededException() {
         // Create 5 cards
         for (int i = 0; i < 5; i++) {
             PaymentCardDto cardDto = new PaymentCardDto();
@@ -144,7 +170,7 @@ class PaymentCardServiceIntegrationTest {
     }
 
     @Test
-    void getCardById_success() {
+    void getCardByIdSuccess() {
         PaymentCard card = new PaymentCard();
         card.setUser(testUser);
         card.setNumber("1234");
@@ -160,13 +186,13 @@ class PaymentCardServiceIntegrationTest {
     }
 
     @Test
-    void getCardById_notFound_returnsEmpty() {
+    void getCardByIdNotFoundReturnsEmpty() {
         Optional<PaymentCardDto> found = paymentCardService.getCardById(999L);
         assertFalse(found.isPresent());
     }
 
     @Test
-    void getAllCards_success() {
+    void getAllCardsSuccess() {
         // Create two cards
         for (int i = 0; i < 2; i++) {
             PaymentCard card = new PaymentCard();
@@ -185,7 +211,7 @@ class PaymentCardServiceIntegrationTest {
     }
 
     @Test
-    void getCardsByUserId_success() {
+    void getCardsByUserIdSuccess() {
         // Create cards for testUser
         for (int i = 0; i < 3; i++) {
             PaymentCard card = new PaymentCard();
@@ -203,7 +229,7 @@ class PaymentCardServiceIntegrationTest {
     }
 
     @Test
-    void updateCard_success() {
+    void updateCardSuccess() {
         PaymentCard card = new PaymentCard();
         card.setUser(testUser);
         card.setNumber("old");
@@ -224,17 +250,21 @@ class PaymentCardServiceIntegrationTest {
 
         PaymentCard fromDb = paymentCardRepository.findById(saved.getId()).get();
         assertEquals("new", fromDb.getNumber());
+
+        // Then(caching)
+        UserDto cached = cacheManager.getCache("users").get(testUser.getId(), UserDto.class);
+        assertThat(cached).isNull();
     }
 
     @Test
-    void updateCard_notFound_throwsCardNotFoundException() {
+    void updateCardNotFoundThrowsCardNotFoundException() {
         PaymentCardDto updateDto = new PaymentCardDto();
 
         assertThrows(CardNotFoundException.class, () -> paymentCardService.updateCard(999L, updateDto));
     }
 
     @Test
-    void deleteCard_success() {
+    void deleteCardSuccess() {
         PaymentCard card = new PaymentCard();
         card.setUser(testUser);
         card.setNumber("toDelete");
@@ -248,15 +278,19 @@ class PaymentCardServiceIntegrationTest {
         assertEquals(saved.getNumber(), deleted.getNumber());
 
         assertFalse(paymentCardRepository.findById(saved.getId()).isPresent());
+
+        // Then(caching)
+        UserDto cached = cacheManager.getCache("users").get(testUser.getId(), UserDto.class);
+        assertThat(cached).isNull();
     }
 
     @Test
-    void deleteCard_notFound_throwsCardNotFoundException() {
+    void deleteCardNotFoundThrowsCardNotFoundException() {
         assertThrows(CardNotFoundException.class, () -> paymentCardService.deleteCard(999L));
     }
 
     @Test
-    void activateCard_success() {
+    void activateCardSuccess() {
         PaymentCard card = new PaymentCard();
         card.setUser(testUser);
         card.setNumber("inactive");
@@ -271,15 +305,19 @@ class PaymentCardServiceIntegrationTest {
 
         PaymentCard fromDb = paymentCardRepository.findById(saved.getId()).get();
         assertTrue(fromDb.getActive());
+
+        // Then(caching)
+        UserDto cached = cacheManager.getCache("users").get(testUser.getId(), UserDto.class);
+        assertThat(cached).isNull();
     }
 
     @Test
-    void activateCard_notFound_throwsCardNotFoundException() {
+    void activateCardNotFoundThrowsCardNotFoundException() {
         assertThrows(CardNotFoundException.class, () -> paymentCardService.activateCard(999L));
     }
 
     @Test
-    void deactivateCard_success() {
+    void deactivateCardSuccess() {
         PaymentCard card = new PaymentCard();
         card.setUser(testUser);
         card.setNumber("active");
@@ -294,10 +332,14 @@ class PaymentCardServiceIntegrationTest {
 
         PaymentCard fromDb = paymentCardRepository.findById(saved.getId()).get();
         assertFalse(fromDb.getActive());
+
+        // Then(caching)
+        UserDto cached = cacheManager.getCache("users").get(testUser.getId(), UserDto.class);
+        assertThat(cached).isNull();
     }
 
     @Test
-    void deactivateCard_notFound_throwsCardNotFoundException() {
+    void deactivateCardNotFoundThrowsCardNotFoundException() {
         assertThrows(CardNotFoundException.class, () -> paymentCardService.deactivateCard(999L));
     }
 }

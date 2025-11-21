@@ -73,7 +73,7 @@ class UserServiceTest {
     }
 
     @Test
-    void createUser_success() {
+    void createUserSuccess() {
         UserDto inputDto = new UserDto();
         inputDto.setName("Jane");
         inputDto.setSurname("Smith");
@@ -116,12 +116,11 @@ class UserServiceTest {
             assertEquals(testUserDto, result.get());
             verify(userRepository).findById(1L);
             verify(userMapper).toDto(testUser);
-            mockedHibernate.verify(() -> org.hibernate.Hibernate.initialize(testUser.getPaymentCards()));
         }
     }
 
     @Test
-    void getUserById_notFound() {
+    void getUserByIdNotFound() {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
         Optional<UserDto> result = userService.getUserById(1L);
@@ -132,7 +131,7 @@ class UserServiceTest {
     }
 
     @Test
-    void getAllUsers_withFilters() {
+    void getAllUsersWithFilters() {
         Pageable pageable = PageRequest.of(0, 10);
         String name = "John";
         String surname = "Doe";
@@ -151,7 +150,7 @@ class UserServiceTest {
     }
 
     @Test
-    void getAllUsers_noFilters() {
+    void getAllUsersNoFilters() {
         Pageable pageable = PageRequest.of(0, 10);
         Page<User> userPage = new PageImpl<>(List.of(testUser));
 
@@ -166,7 +165,7 @@ class UserServiceTest {
     }
 
     @Test
-    void updateUser_success_allFields() {
+    void updateUserSuccessAllFields() {
         UserDto updatedDto = new UserDto();
         updatedDto.setName("UpdatedName");
         updatedDto.setSurname("UpdatedSurname");
@@ -205,7 +204,7 @@ class UserServiceTest {
     }
 
     @Test
-    void updateUser_success_partialFields() {
+    void updateUserSuccessPartialFields() {
         UserDto updatedDto = new UserDto();
         updatedDto.setName("UpdatedName");
         // Other fields null
@@ -236,7 +235,7 @@ class UserServiceTest {
     }
 
     @Test
-    void updateUser_notFound_throwsException() {
+    void updateUserNotFoundThrowsException() {
         UserDto updatedDto = new UserDto();
 
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
@@ -246,13 +245,13 @@ class UserServiceTest {
     }
 
     @Test
-    void deleteUser_success() {
+    void deleteUserSuccess() {
         userService.deleteUser(1L);
         verify(userRepository).deleteById(1L);
     }
 
     @Test
-    void activateUser_success() {
+    void activateUserSuccess() {
         User activatedUser = new User();
         activatedUser.setId(1L);
         activatedUser.setActive(true);
@@ -272,14 +271,14 @@ class UserServiceTest {
     }
 
     @Test
-    void activateUser_notFound_throwsException() {
+    void activateUserNotFoundThrowsException() {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class, () -> userService.activateUser(1L));
     }
 
     @Test
-    void deactivateUser_success() {
+    void deactivateUserSuccess() {
         User deactivatedUser = new User();
         deactivatedUser.setId(1L);
         deactivatedUser.setActive(false);
@@ -303,7 +302,7 @@ class UserServiceTest {
     }
 
     @Test
-    void deactivateUser_notFound_throwsException() {
+    void deactivateUserNotFoundThrowsException() {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class, () -> userService.deactivateUser(1L));

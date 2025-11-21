@@ -84,7 +84,7 @@ class PaymentCardServiceTest {
     }
 
     @Test
-    void createCard_userIdNull_throwsMissingUserException() {
+    void createCardUserIdNullThrowsMissingUserException() {
         paymentCardDto.setUserId(null);
 
         assertThrows(MissingUserException.class, () -> paymentCardService.createCard(paymentCardDto));
@@ -92,7 +92,7 @@ class PaymentCardServiceTest {
     }
 
     @Test
-    void createCard_userNotFound_throwsInvalidRequestException() {
+    void createCardUserNotFoundThrowsInvalidRequestException() {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(InvalidRequestException.class, () -> paymentCardService.createCard(paymentCardDto));
@@ -101,7 +101,7 @@ class PaymentCardServiceTest {
     }
 
     @Test
-    void createCard_cardLimitExceeded_throwsCardLimitExceededException() {
+    void createCardCardLimitExceededThrowsCardLimitExceededException() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(paymentCardRepository.countByUserId(1L)).thenReturn(5L);
 
@@ -112,7 +112,7 @@ class PaymentCardServiceTest {
     }
 
     @Test
-    void createCard_successfulCreation_returnsDtoAndEvictsCache() {
+    void createCardSuccessfulCreationReturnsDtoAndEvictsCache() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(paymentCardRepository.countByUserId(1L)).thenReturn(4L);
         when(paymentCardMapper.toEntity(paymentCardDto)).thenReturn(paymentCard);
@@ -130,7 +130,7 @@ class PaymentCardServiceTest {
     }
 
     @Test
-    void getCardById_cardFound_returnsOptionalDto() {
+    void getCardByIdCardFoundReturnsOptionalDto() {
         when(paymentCardRepository.findById(1L)).thenReturn(Optional.of(paymentCard));
         when(paymentCardMapper.toDto(paymentCard)).thenReturn(paymentCardDto);
 
@@ -144,7 +144,7 @@ class PaymentCardServiceTest {
     }
 
     @Test
-    void getCardById_cardNotFound_returnsEmptyOptional() {
+    void getCardByIdCardNotFoundReturnsEmptyOptional() {
         when(paymentCardRepository.findById(1L)).thenReturn(Optional.empty());
 
         Optional<PaymentCardDto> result = paymentCardService.getCardById(1L);
@@ -155,7 +155,7 @@ class PaymentCardServiceTest {
     }
 
     @Test
-    void getAllCards_returnsPagedDtos() {
+    void getAllCardsReturnsPagedDtos() {
         Pageable pageable = PageRequest.of(0, 10);
         Page<PaymentCard> page = new PageImpl<>(List.of(paymentCard));
         when(paymentCardRepository.findAll(pageable)).thenReturn(page);
@@ -171,7 +171,7 @@ class PaymentCardServiceTest {
     }
 
     @Test
-    void getCardsByUserId_returnsListOfDtos() {
+    void getCardsByUserIdReturnsListOfDtos() {
         when(paymentCardRepository.findByUserId(1L)).thenReturn(List.of(paymentCard));
         when(paymentCardMapper.toDto(paymentCard)).thenReturn(paymentCardDto);
 
@@ -185,7 +185,7 @@ class PaymentCardServiceTest {
     }
 
     @Test
-    void updateCard_cardNotFound_throwsCardNotFoundException() {
+    void updateCardCardNotFoundThrowsCardNotFoundException() {
         when(paymentCardRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(CardNotFoundException.class, () -> paymentCardService.updateCard(1L, paymentCardDto));
@@ -194,7 +194,7 @@ class PaymentCardServiceTest {
     }
 
     @Test
-    void updateCard_successfulUpdate_returnsUpdatedDtoAndEvictsCache() {
+    void updateCardSuccessfulUpdateReturnsUpdatedDtoAndEvictsCache() {
         PaymentCard updatedEntity = new PaymentCard();
         updatedEntity.setNumber("newNumber");
         updatedEntity.setHolder("newHolder");
@@ -226,7 +226,7 @@ class PaymentCardServiceTest {
     }
 
     @Test
-    void deleteCard_cardNotFound_throwsCardNotFoundException() {
+    void deleteCardCardNotFoundThrowsCardNotFoundException() {
         when(paymentCardRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(CardNotFoundException.class, () -> paymentCardService.deleteCard(1L));
@@ -235,7 +235,7 @@ class PaymentCardServiceTest {
     }
 
     @Test
-    void deleteCard_successfulDelete_returnsDeletedDtoAndEvictsCache() {
+    void deleteCardSuccessfulDeleteReturnsDeletedDtoAndEvictsCache() {
         when(paymentCardRepository.findById(1L)).thenReturn(Optional.of(paymentCard));
         when(paymentCardMapper.toDto(paymentCard)).thenReturn(paymentCardDto);
         doNothing().when(paymentCardRepository).deleteById(1L);
@@ -249,7 +249,7 @@ class PaymentCardServiceTest {
     }
 
     @Test
-    void activateCard_cardNotFound_throwsCardNotFoundException() {
+    void activateCardCardNotFoundThrowsCardNotFoundException() {
         when(paymentCardRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(CardNotFoundException.class, () -> paymentCardService.activateCard(1L));
@@ -258,7 +258,7 @@ class PaymentCardServiceTest {
     }
 
     @Test
-    void activateCard_successfulActivation_returnsUpdatedDtoAndEvictsCache() {
+    void activateCardSuccessfulActivationReturnsUpdatedDtoAndEvictsCache() {
         paymentCard.setActive(false);
         when(paymentCardRepository.findById(1L)).thenReturn(Optional.of(paymentCard));
         when(paymentCardRepository.save(paymentCard)).thenReturn(paymentCard);
@@ -274,7 +274,7 @@ class PaymentCardServiceTest {
     }
 
     @Test
-    void deactivateCard_cardNotFound_throwsCardNotFoundException() {
+    void deactivateCardCardNotFoundThrowsCardNotFoundException() {
         when(paymentCardRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(CardNotFoundException.class, () -> paymentCardService.deactivateCard(1L));
@@ -283,7 +283,7 @@ class PaymentCardServiceTest {
     }
 
     @Test
-    void deactivateCard_successfulDeactivation_returnsUpdatedDtoAndEvictsCache() {
+    void deactivateCardSuccessfulDeactivationReturnsUpdatedDtoAndEvictsCache() {
         paymentCard.setActive(true);
         when(paymentCardRepository.findById(1L)).thenReturn(Optional.of(paymentCard));
         when(paymentCardRepository.save(paymentCard)).thenReturn(paymentCard);
