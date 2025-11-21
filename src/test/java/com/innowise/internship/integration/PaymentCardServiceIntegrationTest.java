@@ -3,6 +3,7 @@ package com.innowise.internship.integration;
 import com.innowise.internship.dao.PaymentCardRepository;
 import com.innowise.internship.dao.UserRepository;
 import com.innowise.internship.dto.PaymentCardDto;
+import com.innowise.internship.dto.UserDto;
 import com.innowise.internship.entitiy.PaymentCard;
 import com.innowise.internship.entitiy.User;
 import com.innowise.internship.exception.CardLimitExceededException;
@@ -11,25 +12,33 @@ import com.innowise.internship.exception.InvalidRequestException;
 import com.innowise.internship.exception.MissingUserException;
 import com.innowise.internship.mapper.PaymentCardMapper;
 import com.innowise.internship.service.PaymentCardService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.annotation.Transactional;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -43,12 +52,21 @@ class PaymentCardServiceIntegrationTest {
             .withUsername("test")
             .withPassword("test");
 
+    @Container
+    static final GenericContainer<?> redis = new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
+            .withExposedPorts(6379)
+            .withCommand("--save", "", "--appendonly", "no")
+            .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(30)));
+
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+
+        registry.add("spring.data.redis.host", redis::getHost);
+        registry.add("spring.data.redis.port", redis::getFirstMappedPort);
     }
 
     @Autowired
@@ -65,6 +83,11 @@ class PaymentCardServiceIntegrationTest {
 
     private User testUser;
 
+    @Autowired
+    CacheManager cacheManager;
+
+    private Cache usersCache;
+
     @BeforeEach
     @Transactional
     void setUp() {
@@ -78,6 +101,14 @@ class PaymentCardServiceIntegrationTest {
         testUser.setEmail("testuser@example.com"); // Add this to satisfy the NOT NULL constraint
         // If surname or other fields are also required, set them here (e.g., testUser.setSurname("Test"));
         userRepository.save(testUser);
+
+        usersCache = cacheManager.getCache("users");
+        usersCache.clear();
+    }
+
+    @AfterEach
+    void tearDown() {
+        usersCache.clear();
     }
 
     @Test
@@ -93,6 +124,10 @@ class PaymentCardServiceIntegrationTest {
 
         assertEquals(cardDto.getNumber(), created.getNumber());
         assertEquals(testUser.getId(), created.getUserId());
+
+        // Then(caching)
+        UserDto cached = cacheManager.getCache("users").get(testUser.getId(), UserDto.class);
+        assertThat(cached).isNull();
     }
 
     @Test
@@ -214,6 +249,10 @@ class PaymentCardServiceIntegrationTest {
 
         PaymentCard fromDb = paymentCardRepository.findById(saved.getId()).get();
         assertEquals("new", fromDb.getNumber());
+
+        // Then(caching)
+        UserDto cached = cacheManager.getCache("users").get(testUser.getId(), UserDto.class);
+        assertThat(cached).isNull();
     }
 
     @Test
@@ -238,6 +277,10 @@ class PaymentCardServiceIntegrationTest {
         assertEquals(saved.getNumber(), deleted.getNumber());
 
         assertFalse(paymentCardRepository.findById(saved.getId()).isPresent());
+
+        // Then(caching)
+        UserDto cached = cacheManager.getCache("users").get(testUser.getId(), UserDto.class);
+        assertThat(cached).isNull();
     }
 
     @Test
@@ -261,6 +304,10 @@ class PaymentCardServiceIntegrationTest {
 
         PaymentCard fromDb = paymentCardRepository.findById(saved.getId()).get();
         assertTrue(fromDb.getActive());
+
+        // Then(caching)
+        UserDto cached = cacheManager.getCache("users").get(testUser.getId(), UserDto.class);
+        assertThat(cached).isNull();
     }
 
     @Test
@@ -284,6 +331,10 @@ class PaymentCardServiceIntegrationTest {
 
         PaymentCard fromDb = paymentCardRepository.findById(saved.getId()).get();
         assertFalse(fromDb.getActive());
+
+        // Then(caching)
+        UserDto cached = cacheManager.getCache("users").get(testUser.getId(), UserDto.class);
+        assertThat(cached).isNull();
     }
 
     @Test
