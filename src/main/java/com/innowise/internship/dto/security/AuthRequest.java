@@ -1,4 +1,4 @@
-package com.innowise.internship.dto;
+package com.innowise.internship.dto.security;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -2,6 +2,8 @@ package com.innowise.internship.service;// Updated CustomUserDetailsService - Ch
 
 import com.innowise.internship.dao_auth.AuthUserRepository;
 import com.innowise.internship.entity.AuthUser;
+import com.innowise.internship.entity.Role;
+import com.innowise.internship.exception.UserNotFoundException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -27,4 +29,34 @@ public class CustomUserDetailsService implements UserDetailsService {
     public AuthUser createAuthUser (AuthUser authUser) {
         return authUserRepository.save(authUser);
     }
+
+    @Transactional
+    public Boolean existsByEmail (String email) {
+        return authUserRepository.existsByEmail(email);
+    }
+
+    @Transactional
+    public UserDetails deactivateUser(Long id) {
+        return authUserRepository.findById(id).map(user -> {
+            user.setActive(false);
+            return authUserRepository.save(user);
+        }).orElseThrow(() -> new UserNotFoundException(id));
+    }
+    @Transactional
+    public UserDetails activateUser(Long id) {
+        return authUserRepository.findById(id).map(user -> {
+            user.setActive(true);
+            return authUserRepository.save(user);
+        }).orElseThrow(() -> new UserNotFoundException(id));
+    }
+
+    @Transactional
+    public UserDetails setAdminRole(Long id) {
+        return authUserRepository.findById(id).map(user -> {
+            user.setRole(Role.ADMIN);
+            return authUserRepository.save(user);
+        }).orElseThrow(() -> new UserNotFoundException(id));
+    }
+
+
 }

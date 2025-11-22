@@ -20,18 +20,16 @@ import java.util.List;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
+
     private String surname;
 
     private LocalDate birthDate;
 
     @Column(unique = true, nullable = false)
     private String email;
-
-    private Boolean active;
 
     @CreatedDate
     @Column(updatable = false)

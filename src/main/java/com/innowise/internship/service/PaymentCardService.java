@@ -1,24 +1,22 @@
 package com.innowise.internship.service;
 
+import com.innowise.internship.dao.PaymentCardRepository;
+import com.innowise.internship.dao.UserRepository;
 import com.innowise.internship.dto.PaymentCardDto;
 import com.innowise.internship.entity.PaymentCard;
 import com.innowise.internship.entity.User;
 import com.innowise.internship.exception.CardLimitExceededException;
 import com.innowise.internship.exception.CardNotFoundException;
 import com.innowise.internship.exception.InvalidRequestException;
-import com.innowise.internship.mapper.PaymentCardMapper;
-import com.innowise.internship.dao.PaymentCardRepository;
-import com.innowise.internship.dao.UserRepository;
 import com.innowise.internship.exception.MissingUserException;
+import com.innowise.internship.mapper.PaymentCardMapper;
 import jakarta.transaction.Transactional;
-import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,17 +25,16 @@ public class PaymentCardService {
     private final PaymentCardRepository paymentCardRepository;
     private final UserRepository userRepository;
     private final PaymentCardMapper paymentCardMapper;
-    private final CacheManager cacheManager;
 
-    public PaymentCardService(PaymentCardRepository paymentCardRepository, UserRepository userRepository, PaymentCardMapper paymentCardMapper, CacheManager cacheManager) {
+    public PaymentCardService(PaymentCardRepository paymentCardRepository,
+                              UserRepository userRepository, PaymentCardMapper paymentCardMapper) {
         this.paymentCardRepository = paymentCardRepository;
         this.userRepository = userRepository;
         this.paymentCardMapper = paymentCardMapper;
-        this.cacheManager = cacheManager;
     }
 
     @Transactional
-    @CacheEvict(value = "users", key = "#cardDto.userId")
+    @CacheEvict(value = "users", key = "#result.userId")
     public PaymentCardDto createCard(PaymentCardDto cardDto) {
         Long userId = cardDto.getUserId();
         if (userId == null) {
@@ -49,15 +46,16 @@ public class PaymentCardService {
             throw new CardLimitExceededException();
         }
         PaymentCard card = paymentCardMapper.toEntity(cardDto);
+        card.setActive(true);//todo hardcoded
         card.setUser(user);
         user.getPaymentCards().add(card);
-        userRepository.save(user);
-        return paymentCardMapper.toDto(card);
+        PaymentCard savedCard = paymentCardRepository.save(card);
+        return paymentCardMapper.toDto(savedCard);
     }
 
     @Transactional
-    public Optional<PaymentCardDto> getCardById(Long id) {
-        return paymentCardRepository.findById(id).map(paymentCardMapper::toDto);
+    public PaymentCardDto getCardById(Long id) {
+        return paymentCardRepository.findById(id).map(paymentCardMapper::toDto).orElseThrow(() -> new CardNotFoundException(id));
     }
 
     @Transactional
@@ -87,11 +85,35 @@ public class PaymentCardService {
 
     @Transactional
     @CacheEvict(value = "users", key = "#result.userId")
+    public PaymentCardDto updateUserCard(Long id, PaymentCardDto updatedCardDto, Long userId) {
+        return paymentCardRepository.findById(id).map(card -> {
+            if (!card.getUser().getId().equals(userId)) throw new CardNotFoundException(id);
+            PaymentCard updatedCard = paymentCardMapper.toEntity(updatedCardDto);
+            if (updatedCard.getNumber() != null) card.setNumber(updatedCard.getNumber());
+            if (updatedCard.getHolder() != null) card.setHolder(updatedCard.getHolder());
+            if (updatedCard.getExpirationDate() != null) card.setExpirationDate(updatedCard.getExpirationDate());
+            PaymentCard savedCard = paymentCardRepository.save(card);
+            return paymentCardMapper.toDto(savedCard);
+        }).orElseThrow(() -> new CardNotFoundException(id));
+    }
+
+    @Transactional
+    @CacheEvict(value = "users", key = "#result.userId")
     public PaymentCardDto deleteCard(Long id) {
         return paymentCardRepository.findById(id).map(card -> {
             PaymentCardDto deletedDto = paymentCardMapper.toDto(card); // Копируем DTO перед удалением
             paymentCardRepository.deleteById(id);
             return deletedDto; // Возвращаем копию удалённой карты
+        }).orElseThrow(() -> new CardNotFoundException(id));
+    }
+
+    @Transactional
+    @CacheEvict(value = "users", key = "#result.userId")
+    public PaymentCardDto deleteUserCard(Long id, Long userId) {
+        return paymentCardRepository.findByIdAndUserId(id, userId).map(card -> {
+            PaymentCardDto deletedDto = paymentCardMapper.toDto(card);
+            paymentCardRepository.deleteById(id);
+            return deletedDto;
         }).orElseThrow(() -> new CardNotFoundException(id));
     }
 
@@ -113,5 +135,12 @@ public class PaymentCardService {
             PaymentCard savedCard = paymentCardRepository.save(card);
             return paymentCardMapper.toDto(savedCard); // Возвращаем обновлённый DTO
         }).orElseThrow(() -> new CardNotFoundException(id));
+    }
+
+    @Transactional
+    public PaymentCardDto getUserCardById(Long id, Long userId) {
+        return paymentCardRepository.findByIdAndUserId(id, userId)
+                .map(paymentCardMapper::toDto)
+                .orElseThrow(() -> new CardNotFoundException(id));
     }
 }

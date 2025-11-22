@@ -1,10 +1,10 @@
 package com.innowise.internship.service;
 
+import com.innowise.internship.dao.UserRepository;
 import com.innowise.internship.dto.UserDto;
 import com.innowise.internship.entity.User;
 import com.innowise.internship.exception.UserNotFoundException;
 import com.innowise.internship.mapper.UserMapper;
-import com.innowise.internship.dao.UserRepository;
 import com.innowise.internship.specification.UserSpecification;
 import jakarta.transaction.Transactional;
 import org.hibernate.Hibernate;
@@ -39,8 +39,8 @@ public class UserService {
 
     @Cacheable(value = "users", key = "#id")
     @Transactional()
-    public Optional<UserDto> getUserById(Long id) {  // Сделайте public, если нужно
-        return userRepository.findById(id).map(user -> userMapper.toDto(user));
+    public Optional<UserDto> getUserById(Long id) {
+        return userRepository.findById(id).map(userMapper::toDto);
     }
 
     @Transactional
@@ -58,7 +58,6 @@ public class UserService {
             if (updatedUser.getName() != null) user.setName(updatedUser.getName());
             if (updatedUser.getSurname() != null) user.setSurname(updatedUser.getSurname());
             if (updatedUser.getBirthDate() != null) user.setBirthDate(updatedUser.getBirthDate());
-            if (updatedUser.getEmail() != null) user.setEmail(updatedUser.getEmail());
             User savedUser = userRepository.save(user);
             return userMapper.toDto(savedUser);
         }).orElseThrow(() -> new UserNotFoundException(id));
@@ -70,12 +69,13 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
-    @Transactional
+   /* @Transactional
     @CachePut(value = "users", key = "#result.id")
     public UserDto activateUser(Long id) {
         return userRepository.findById(id).map(user -> {
             user.setActive(true);
             User savedUser = userRepository.save(user);
+            Hibernate.initialize(savedUser.getPaymentCards());
             return userMapper.toDto(savedUser);
         }).orElseThrow(() -> new UserNotFoundException(id));
     }
@@ -89,5 +89,6 @@ public class UserService {
             Hibernate.initialize(savedUser.getPaymentCards()); // Ensure full load for consistent caching
             return userMapper.toDto(savedUser);
         }).orElseThrow(() -> new UserNotFoundException(id));
-    }
+    }*/
+
 }

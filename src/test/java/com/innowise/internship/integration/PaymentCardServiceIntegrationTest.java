@@ -179,16 +179,15 @@ class PaymentCardServiceIntegrationTest {
         card.setActive(true);
         PaymentCard saved = paymentCardRepository.save(card);
 
-        Optional<PaymentCardDto> found = paymentCardService.getCardById(saved.getId());
+        PaymentCardDto found = paymentCardService.getCardById(saved.getId());
 
-        assertTrue(found.isPresent());
-        assertEquals(saved.getNumber(), found.get().getNumber());
+        assertEquals(saved.getNumber(), found.getNumber());
     }
 
     @Test
     void getCardByIdNotFoundReturnsEmpty() {
-        Optional<PaymentCardDto> found = paymentCardService.getCardById(999L);
-        assertFalse(found.isPresent());
+        PaymentCardDto found = paymentCardService.getCardById(999L);
+        assertNull(found);
     }
 
     @Test

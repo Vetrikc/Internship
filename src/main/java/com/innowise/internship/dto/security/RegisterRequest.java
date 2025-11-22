@@ -1,6 +1,5 @@
-package com.innowise.internship.dto;
+package com.innowise.internship.dto.security;
 
-import com.innowise.internship.entity.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Past;
@@ -16,8 +15,9 @@ public class RegisterRequest {
     @NotBlank(message = "Email is required")
     @Email(message = "Email should be valid")
     private String email;
+
+    @NotBlank(message = "password is required")
     private String password;
-    private Role role;
 
     @NotBlank(message = "Name is required")
     private String name;

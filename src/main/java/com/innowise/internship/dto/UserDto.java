@@ -24,11 +24,9 @@ public class UserDto {
     @Past(message = "Birth date must be in the past")
     private LocalDate birthDate;
 
-    @NotBlank(message = "Email is required")
+
     @Email(message = "Email should be valid")
     private String email;
-
-    private Boolean active;
 
     private LocalDateTime createdAt;
 

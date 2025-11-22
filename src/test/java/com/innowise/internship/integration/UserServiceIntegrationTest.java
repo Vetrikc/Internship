@@ -101,7 +101,6 @@ class UserServiceIntegrationTest {
         userDto.setSurname("Doe");
         userDto.setBirthDate(LocalDate.of(1990, 1, 1));
         userDto.setEmail("john.doe@example.com");
-        userDto.setActive(true);
 
         // When
         UserDto createdUser = userService.createUser(userDto);
@@ -130,7 +129,6 @@ class UserServiceIntegrationTest {
         user.setSurname("Smith");
         user.setBirthDate(LocalDate.of(1985, 5, 5));
         user.setEmail("jane.smith@example.com");
-        user.setActive(true);
         User savedUser = userRepository.save(user);
 
         // When
@@ -174,7 +172,6 @@ class UserServiceIntegrationTest {
         user1.setSurname("Johnson");
         user1.setBirthDate(LocalDate.of(1992, 2, 2));
         user1.setEmail("alice@example.com");
-        user1.setActive(true);
         userRepository.save(user1);
 
         User user2 = new User();
@@ -182,7 +179,6 @@ class UserServiceIntegrationTest {
         user2.setSurname("Johnson");
         user2.setBirthDate(LocalDate.of(1988, 8, 8));
         user2.setEmail("bob@example.com");
-        user2.setActive(true);
         userRepository.save(user2);
 
         Pageable pageable = PageRequest.of(0, 10);
@@ -204,7 +200,6 @@ class UserServiceIntegrationTest {
         user.setSurname("OldSurname");
         user.setBirthDate(LocalDate.of(2000, 1, 1));
         user.setEmail("old@email.com");
-        user.setActive(true);
         User savedUser = userRepository.save(user);
 
         UserDto updatedDto = new UserDto();
@@ -252,7 +247,6 @@ class UserServiceIntegrationTest {
         user.setSurname("User");
         user.setBirthDate(LocalDate.now());
         user.setEmail("delete@example.com");
-        user.setActive(true);
         User savedUser = userRepository.save(user);
 
         // When
@@ -267,73 +261,4 @@ class UserServiceIntegrationTest {
         assertThat(cached).isNull();
     }
 
-    @Test
-    void testActivateUser() {
-        // Given
-        User user = new User();
-        user.setName("Inactive");
-        user.setSurname("User");
-        user.setBirthDate(LocalDate.now());
-        user.setEmail("inactive@example.com");
-        user.setActive(false);
-        User savedUser = userRepository.save(user);
-
-        // When
-        UserDto activatedUser = userService.activateUser(savedUser.getId());
-
-        // Then
-        assertThat(activatedUser.getActive()).isTrue();
-
-        Optional<User> dbUser = userRepository.findById(savedUser.getId());
-        assertThat(dbUser).isPresent();
-        assertThat(dbUser.get().getActive()).isTrue();
-
-        // Then(caching)
-        UserDto cached = cacheManager.getCache("users").get(activatedUser.getId(), UserDto.class);
-        assertThat(cached).isNotNull();
-        assertThat(cached.getActive()).isTrue();
-    }
-
-    @Test
-    @Transactional
-    void testActivateUserNotFound() {
-        // When & Then
-        assertThatThrownBy(() -> userService.activateUser(999L))
-                .isInstanceOf(UserNotFoundException.class);
-    }
-
-    @Test
-    void testDeactivateUser() {
-        // Given
-        User user = new User();
-        user.setName("Active");
-        user.setSurname("User");
-        user.setBirthDate(LocalDate.now());
-        user.setEmail("active@example.com");
-        user.setActive(true);
-        User savedUser = userRepository.save(user);
-
-        // When
-        UserDto deactivatedUser = userService.deactivateUser(savedUser.getId());
-
-        // Then
-        assertThat(deactivatedUser.getActive()).isFalse();
-
-        Optional<User> dbUser = userRepository.findById(savedUser.getId());
-        assertThat(dbUser).isPresent();
-        assertThat(dbUser.get().getActive()).isFalse();
-
-        // Then(caching)
-        UserDto cached = cacheManager.getCache("users").get(deactivatedUser.getId(), UserDto.class);
-        assertThat(cached).isNotNull();
-        assertThat(cached.getActive()).isFalse();
-    }
-
-    @Test
-    @Transactional
-    void testDeactivateUserNotFound() {
-        // When & Then
-        assertThatThrownBy(() -> userService.deactivateUser(999L))
-                .isInstanceOf(UserNotFoundException.class);
-    }
 }

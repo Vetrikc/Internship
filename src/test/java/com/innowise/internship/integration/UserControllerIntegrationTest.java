@@ -192,38 +192,4 @@ class UserControllerIntegrationTest {
 
         assertThat(userRepository.findById(saved.getId())).isEmpty();
     }
-
-    @Test
-    void testActivateUser() throws Exception {
-        User entity = new User();
-        entity.setEmail("test@example.com");
-        entity.setName("John");
-        entity.setSurname("Doe");
-        entity.setBirthDate(LocalDate.parse("2000-01-01"));
-        entity.setActive(false);
-        User saved = userRepository.save(entity);
-
-        mockMvc.perform(MockMvcRequestBuilders.put("/users/" + saved.getId() + "/activate"))
-                .andExpect(status().isOk());
-
-        User updated = userRepository.findById(saved.getId()).orElseThrow();
-        assertThat(updated.getActive()).isTrue();
-    }
-
-    @Test
-    void testDeactivateUser() throws Exception {
-        User entity = new User();
-        entity.setEmail("test@example.com");
-        entity.setName("John");
-        entity.setSurname("Doe");
-        entity.setBirthDate(LocalDate.parse("2000-01-01"));
-        entity.setActive(true);
-        User saved = userRepository.save(entity);
-
-        mockMvc.perform(MockMvcRequestBuilders.put("/users/" + saved.getId() + "/deactivate"))
-                .andExpect(status().isOk());
-
-        User updated = userRepository.findById(saved.getId()).orElseThrow();
-        assertThat(updated.getActive()).isFalse();
-    }
 }

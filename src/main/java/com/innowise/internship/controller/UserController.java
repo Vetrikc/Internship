@@ -1,6 +1,8 @@
 package com.innowise.internship.controller;
 
 import com.innowise.internship.dto.UserDto;
+import com.innowise.internship.entity.AuthUser;
+import com.innowise.internship.exception.UnauthorizedException;
 import com.innowise.internship.exception.UserNotFoundException;
 import com.innowise.internship.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,29 +29,19 @@ public class UserController {
         this.userService = userService;
     }
 
-    @PostMapping
-    public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserDto userDto) {
-        UserDto createdUser = userService.createUser(userDto);
-        return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
-    }
-
-    @GetMapping("/{id}")
-    @Operation(summary = "Получить пользователя по ID", description = "Возвращает данные пользователя")
-    public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
-        return userService.getUserById(id)
-                .map(userDto -> new ResponseEntity<>(userDto, HttpStatus.OK))
-                .orElseThrow(() -> new UserNotFoundException("User not found id:" + id));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @Valid @RequestBody UserDto userDto) {
-        UserDto updatedUser = userService.updateUser(id, userDto);
+    @PutMapping()
+    public ResponseEntity<UserDto> updateUser( @Valid @RequestBody UserDto userDto,Authentication authentication) {
+        AuthUser userDetails = (AuthUser) authentication.getPrincipal();
+        Long userId = userDetails.getId();
+        UserDto updatedUser = userService.updateUser(userId, userDto);
         return new ResponseEntity<>(updatedUser, HttpStatus.OK);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUserInfo(Authentication authentication) throws UnauthorizedException {
+        AuthUser userDetails = (AuthUser) authentication.getPrincipal();
+        return new ResponseEntity<>(userService.getUserById(userDetails.getId()).orElseThrow(() -> new UsernameNotFoundException("User not found")),
+                HttpStatus.OK);
     }
+
 }

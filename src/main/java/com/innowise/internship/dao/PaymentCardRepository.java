@@ -7,9 +7,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface PaymentCardRepository extends JpaRepository<PaymentCard, Long>, JpaSpecificationExecutor<PaymentCard> {
     @Query(value = "SELECT COUNT(*) FROM payment_cards WHERE user_id = :userId", nativeQuery = true)
     long countByUserId(@Param("userId") Long userId);
     List<PaymentCard> findByUserId(Long userId);
+    Optional<PaymentCard> findByIdAndUserId(Long cardId, Long userId);
+    void deleteByIdAndUserId(Long cardId, Long userId);
 }

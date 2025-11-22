@@ -75,7 +75,6 @@ public class RepositoryIntegrationTest {
         user.setSurname("Doe");
         user.setBirthDate(LocalDate.of(1990, 1, 1));
         user.setEmail("john@example.com");
-        user.setActive(true);
 
         PaymentCard card1 = new PaymentCard();
         card1.setNumber("1234567890123456");
@@ -119,7 +118,6 @@ public class RepositoryIntegrationTest {
         user1.setSurname("Smith");
         user1.setBirthDate(LocalDate.of(1985, 5, 15));
         user1.setEmail("alice@example.com");
-        user1.setActive(true);
 
         PaymentCard card1 = new PaymentCard();
         card1.setNumber("1111222233334444");
@@ -136,7 +134,6 @@ public class RepositoryIntegrationTest {
         user2.setSurname("Johnson");
         user2.setBirthDate(LocalDate.of(1995, 3, 20));
         user2.setEmail("bob@example.com");
-        user2.setActive(false);
 
         PaymentCard card2 = new PaymentCard();
         card2.setNumber("5555666677778888");
@@ -171,7 +168,6 @@ public class RepositoryIntegrationTest {
         user.setSurname("User");
         user.setBirthDate(LocalDate.of(2000, 1, 1));
         user.setEmail("nocard@example.com");
-        user.setActive(true);
 
         User savedUser = userRepository.save(user);
 
