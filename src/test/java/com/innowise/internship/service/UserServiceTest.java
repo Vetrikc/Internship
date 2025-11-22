@@ -60,7 +60,6 @@ class UserServiceTest {
         testUser.setSurname("Doe");
         testUser.setBirthDate(LocalDate.of(1990, 1, 1));
         testUser.setEmail("john.doe@example.com");
-        testUser.setActive(true);
         testUser.setPaymentCards(Collections.emptyList());
 
         testUserDto = new UserDto();
@@ -69,7 +68,6 @@ class UserServiceTest {
         testUserDto.setSurname("Doe");
         testUserDto.setBirthDate(LocalDate.of(1990, 1, 1));
         testUserDto.setEmail("john.doe@example.com");
-        testUserDto.setActive(true);
     }
 
     @Test
@@ -248,63 +246,5 @@ class UserServiceTest {
     void deleteUserSuccess() {
         userService.deleteUser(1L);
         verify(userRepository).deleteById(1L);
-    }
-
-    @Test
-    void activateUserSuccess() {
-        User activatedUser = new User();
-        activatedUser.setId(1L);
-        activatedUser.setActive(true);
-
-        UserDto activatedDto = new UserDto();
-        activatedDto.setId(1L);
-        activatedDto.setActive(true);
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(userRepository.save(testUser)).thenReturn(activatedUser);
-        when(userMapper.toDto(activatedUser)).thenReturn(activatedDto);
-
-        UserDto result = userService.activateUser(1L);
-
-        assertTrue(result.getActive());
-        verify(userRepository).save(testUser);
-    }
-
-    @Test
-    void activateUserNotFoundThrowsException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
-
-        assertThrows(UserNotFoundException.class, () -> userService.activateUser(1L));
-    }
-
-    @Test
-    void deactivateUserSuccess() {
-        User deactivatedUser = new User();
-        deactivatedUser.setId(1L);
-        deactivatedUser.setActive(false);
-        deactivatedUser.setPaymentCards(Collections.emptyList());
-
-        UserDto deactivatedDto = new UserDto();
-        deactivatedDto.setId(1L);
-        deactivatedDto.setActive(false);
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(userRepository.save(testUser)).thenReturn(deactivatedUser);
-        when(userMapper.toDto(deactivatedUser)).thenReturn(deactivatedDto);
-
-        try (MockedStatic<org.hibernate.Hibernate> mockedHibernate = Mockito.mockStatic(org.hibernate.Hibernate.class)) {
-            UserDto result = userService.deactivateUser(1L);
-
-            assertFalse(result.getActive());
-            verify(userRepository).save(testUser);
-            mockedHibernate.verify(() -> org.hibernate.Hibernate.initialize(deactivatedUser.getPaymentCards()));
-        }
-    }
-
-    @Test
-    void deactivateUserNotFoundThrowsException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
-
-        assertThrows(UserNotFoundException.class, () -> userService.deactivateUser(1L));
     }
 }

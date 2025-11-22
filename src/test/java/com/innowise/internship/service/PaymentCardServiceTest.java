@@ -134,10 +134,10 @@ class PaymentCardServiceTest {
         when(paymentCardRepository.findById(1L)).thenReturn(Optional.of(paymentCard));
         when(paymentCardMapper.toDto(paymentCard)).thenReturn(paymentCardDto);
 
-        Optional<PaymentCardDto> result = paymentCardService.getCardById(1L);
+        PaymentCardDto result = paymentCardService.getCardById(1L);
 
-        assertTrue(result.isPresent());
-        assertEquals(paymentCardDto, result.get());
+        assertNotNull(result);
+        assertEquals(paymentCardDto, result);
         verify(paymentCardRepository).findById(1L);
         verify(paymentCardMapper).toDto(paymentCard);
         verifyNoInteractions(cache);
@@ -147,9 +147,9 @@ class PaymentCardServiceTest {
     void getCardByIdCardNotFoundReturnsEmptyOptional() {
         when(paymentCardRepository.findById(1L)).thenReturn(Optional.empty());
 
-        Optional<PaymentCardDto> result = paymentCardService.getCardById(1L);
+        PaymentCardDto result = paymentCardService.getCardById(1L);
 
-        assertFalse(result.isPresent());
+        assertNotNull(result);
         verify(paymentCardRepository).findById(1L);
         verifyNoInteractions(paymentCardMapper, cache);
     }
