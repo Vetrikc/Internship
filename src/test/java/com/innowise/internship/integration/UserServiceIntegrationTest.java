@@ -39,7 +39,6 @@ import static org.mockito.Mockito.verify;
 
 @Testcontainers
 @SpringBootTest
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class UserServiceIntegrationTest {
 
     @Container
