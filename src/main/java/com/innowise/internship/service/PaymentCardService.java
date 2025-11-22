@@ -27,13 +27,11 @@ public class PaymentCardService {
     private final PaymentCardRepository paymentCardRepository;
     private final UserRepository userRepository;
     private final PaymentCardMapper paymentCardMapper;
-    private final CacheManager cacheManager;
 
-    public PaymentCardService(PaymentCardRepository paymentCardRepository, UserRepository userRepository, PaymentCardMapper paymentCardMapper, CacheManager cacheManager) {
+    public PaymentCardService(PaymentCardRepository paymentCardRepository, UserRepository userRepository, PaymentCardMapper paymentCardMapper) {
         this.paymentCardRepository = paymentCardRepository;
         this.userRepository = userRepository;
         this.paymentCardMapper = paymentCardMapper;
-        this.cacheManager = cacheManager;
     }
 
     @Transactional
@@ -51,8 +49,8 @@ public class PaymentCardService {
         PaymentCard card = paymentCardMapper.toEntity(cardDto);
         card.setUser(user);
         user.getPaymentCards().add(card);
-        userRepository.save(user);
-        return paymentCardMapper.toDto(card);
+        PaymentCard savedCard = paymentCardRepository.save(card);
+        return paymentCardMapper.toDto(savedCard);
     }
 
     @Transactional
