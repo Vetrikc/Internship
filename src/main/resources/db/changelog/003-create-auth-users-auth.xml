@@ -1,0 +1,15 @@
+<changeSet id="002" author="vllad07">
+    <createTable tableName="auth_users">
+        <column name="id" type="bigint" autoIncrement="true">
+            <constraints primaryKey="true" nullable="false"/>
+        </column>
+        <column name="email" type="varchar(255)">
+            <constraints nullable="false" unique="true"/>
+        </column>
+        <column name="password" type="varchar(255)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="role" type="varchar(255)" defaultValue="USER"/>
+        <column name="active" type="boolean"/>
+    </createTable>
+</changeSet>

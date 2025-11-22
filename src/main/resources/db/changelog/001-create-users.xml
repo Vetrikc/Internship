@@ -1,16 +1,17 @@
 <changeSet id="001" author="vllad07">
     <createTable tableName="users">
-        <column name="id" type="BIGINT" autoIncrement="true">
+        <column name="id" type="bigint">
             <constraints primaryKey="true" nullable="false"/>
         </column>
-        <column name="name" type="VARCHAR(255)"/>
-        <column name="surname" type="VARCHAR(255)"/>
-        <column name="birth_date" type="DATE"/>
-        <column name="email" type="VARCHAR(255)">
+        <column name="name" type="varchar(255)"/>
+        <column name="surname" type="varchar(255)"/>
+        <column name="birth_date" type="date"/>
+        <column name="email" type="varchar(255)">
             <constraints nullable="false" unique="true"/>
         </column>
-        <column name="active" type="BOOLEAN"/>
-        <column name="created_at" type="TIMESTAMP"/>
-        <column name="updated_at" type="TIMESTAMP"/>
+        <column name="created_at" type="timestamp">
+            <constraints updatable="false"/>
+        </column>
+        <column name="updated_at" type="timestamp"/>
     </createTable>
 </changeSet>
