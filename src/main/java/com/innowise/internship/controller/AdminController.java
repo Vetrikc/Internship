@@ -3,7 +3,6 @@ package com.innowise.internship.controller;
 
 import com.innowise.internship.dto.PaymentCardDto;
 import com.innowise.internship.dto.UserDto;
-import com.innowise.internship.exception.CardNotFoundException;
 import com.innowise.internship.exception.UserNotFoundException;
 import com.innowise.internship.service.CustomUserDetailsService;
 import com.innowise.internship.service.PaymentCardService;
@@ -59,7 +58,7 @@ public class AdminController {
     public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
         return userService.getUserById(id)
                 .map(userDto -> new ResponseEntity<>(userDto, HttpStatus.OK))
-                .orElseThrow(() -> new UserNotFoundException("User not found id:" + id));
+                .orElseThrow(() -> new UserNotFoundException(id));
     }
 
     @GetMapping("/cards/{id}")

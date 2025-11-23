@@ -6,12 +6,11 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
-
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
+
 
 @Component
 public class JwtUtils {
@@ -64,8 +63,8 @@ public class JwtUtils {
         return extractClaims(token).getSubject();
     }
 
-    public UUID extractUserId(String token) {
-        return UUID.fromString((String) extractClaims(token).get("userId"));
+    public Long extractUserId(String token) {
+        return (Long) extractClaims(token).get("userId");
     }
 
     public String extractRole(String token) {

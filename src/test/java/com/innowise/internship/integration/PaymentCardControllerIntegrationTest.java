@@ -2,11 +2,8 @@ package com.innowise.internship.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innowise.internship.dao.PaymentCardRepository;
-import com.innowise.internship.dao.UserRepository;
 import com.innowise.internship.dto.PaymentCardDto;
 import com.innowise.internship.entity.AuthUser;
-import com.innowise.internship.entity.PaymentCard;
-import com.innowise.internship.entity.User;
 import com.innowise.internship.service.PaymentCardService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -24,23 +21,17 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-
 import java.time.Duration;
-import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;

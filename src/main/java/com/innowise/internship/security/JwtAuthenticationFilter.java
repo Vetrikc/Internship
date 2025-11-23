@@ -1,6 +1,8 @@
-package com.innowise.internship.security;// Updated JWT Authentication Filter - Ensure it's using extractEmail
+package com.innowise.internship.security;
 
 import com.innowise.internship.service.CustomUserDetailsService;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +21,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
     private final CustomUserDetailsService userDetailsService;
+
 
     public JwtAuthenticationFilter(JwtUtils jwtUtils, CustomUserDetailsService userDetailsService) {
         this.jwtUtils = jwtUtils;
@@ -42,10 +45,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         SecurityContextHolder.getContext().setAuthentication(authToken);
                     }
                 }
-            } catch (Exception e) {
-                // Log exception if needed, but continue to let security handle unauthorized
+            } catch (ExpiredJwtException e) {
+                sendErrorResponse(response, "Token expired");
+                return;
+            } catch (JwtException e) {
+                sendErrorResponse(response, "Invalid token");
+                return;
             }
         }
         filterChain.doFilter(request, response);
+    }
+
+    private void sendErrorResponse(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+        response.getWriter().write(String.format("{\"error\": \"%s\"}", message));
     }
 }

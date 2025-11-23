@@ -1,6 +1,5 @@
 package com.innowise.internship.integration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innowise.internship.dao.UserRepository;
 import com.innowise.internship.dto.UserDto;
 import com.innowise.internship.entity.User;
@@ -26,15 +25,12 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.junit.Assert.assertThrows;
 
 @Testcontainers
 @SpringBootTest
@@ -172,9 +168,8 @@ class UserServiceIntegrationTest {
     @Test
     @Transactional
     void testGetUserByIdNotFound() {
-        // When & Then
-        Optional<UserDto> foundUser = userService.getUserById(999L);
-        assertThat(foundUser).isEmpty();
+        assertThrows(UserNotFoundException.class,
+                () -> userService.getUserById(999L));
     }
 
     @Test

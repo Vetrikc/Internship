@@ -22,15 +22,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -166,7 +162,7 @@ class PaymentCardServiceTest {
         Page<PaymentCardDto> result = paymentCardService.getAllCards(pageable);
 
         assertEquals(1, result.getContent().size());
-        assertEquals(paymentCardDto, result.getContent().get(0));
+        assertEquals(paymentCardDto, result.getContent().getFirst());
         verify(paymentCardRepository).findAll(pageable);
         verify(paymentCardMapper).toDto(paymentCard);
         verifyNoInteractions(cache);
@@ -180,7 +176,7 @@ class PaymentCardServiceTest {
         List<PaymentCardDto> result = paymentCardService.getCardsByUserId(1L);
 
         assertEquals(1, result.size());
-        assertEquals(paymentCardDto, result.get(0));
+        assertEquals(paymentCardDto, result.getFirst());
         verify(paymentCardRepository).findByUserId(1L);
         verify(paymentCardMapper).toDto(paymentCard);
         verifyNoInteractions(cache);

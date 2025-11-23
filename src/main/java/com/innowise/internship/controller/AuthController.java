@@ -1,9 +1,10 @@
 package com.innowise.internship.controller;// Updated Auth Controller - Change username to email in DTOs and methods
 
+import com.innowise.internship.dto.UserDto;
 import com.innowise.internship.dto.security.AuthRequest;
 import com.innowise.internship.dto.security.RefreshRequest;
 import com.innowise.internship.dto.security.RegisterRequest;
-import com.innowise.internship.dto.UserDto;
+import com.innowise.internship.dto.security.ValidateRequest;
 import com.innowise.internship.entity.AuthUser;
 import com.innowise.internship.entity.Role;
 import com.innowise.internship.security.JwtUtils;
@@ -14,9 +15,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import java.util.Map;
 
 @RestController
@@ -42,7 +46,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest request) {
         try {
-            Authentication authentication = authenticationManager.authenticate(
+            authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
 
@@ -54,14 +58,14 @@ public class AuthController {
             return ResponseEntity.ok(Map.of("accessToken", accessToken, "refreshToken", refreshToken));
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Неверный email или пароль"));
+                    .body(Map.of("error", "Invalid email or password"));
         }
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         if (customUserDetailsService.existsByEmail(request.getEmail())) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Email уже зарегистрирован"));
+            return ResponseEntity.badRequest().body(Map.of("error", "The Email is already registered"));
         }
 
         // 1. Создаём учётные данные в отдельной БД//todo HARDCODED
@@ -80,10 +84,10 @@ public class AuthController {
         userDto.setSurname(request.getSurname());
         userDto.setBirthDate(request.getBirthDate());
 
-        userService.createUser(userDto);
+        UserDto createdUserDto = userService.createUser(userDto);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("message", "User has been created"));
+                .body(Map.of("message", createdUserDto));
     }
 
     // Refresh token endpoint
@@ -103,10 +107,28 @@ public class AuthController {
 
             String newAccessToken = jwtUtils.generateAccessToken(authUser);
 
-            return ResponseEntity.ok (Map.of("accessToken", newAccessToken));
+            return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Invalid refresh token"));
+        }
+    }
+
+    @PostMapping("/validate")
+    public ResponseEntity<?> validateToken(@RequestBody ValidateRequest request) {
+        String token = request.getToken();
+
+        try {
+            String email = jwtUtils.extractEmail(token);
+
+            AuthUser authUser = (AuthUser) customUserDetailsService.loadUserByUsername(email);
+
+            boolean isValid = jwtUtils.validateToken(token, authUser);
+
+            return ResponseEntity.ok().body(Map.of("valid", isValid, "email", email));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Invalid token"));
         }
     }
 

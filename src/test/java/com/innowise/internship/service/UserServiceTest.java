@@ -13,19 +13,15 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -39,12 +35,6 @@ class UserServiceTest {
 
     @Mock
     private UserMapper userMapper;
-
-    @Mock
-    private CacheManager cacheManager;
-
-    @Mock
-    private Cache cache;
 
     @InjectMocks
     private UserService userService;
@@ -143,7 +133,7 @@ class UserServiceTest {
 
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        assertEquals(testUserDto, result.getContent().get(0));
+        assertEquals(testUserDto, result.getContent().getFirst());
         verify(userRepository).findAll(any(Specification.class), eq(pageable));
     }
 

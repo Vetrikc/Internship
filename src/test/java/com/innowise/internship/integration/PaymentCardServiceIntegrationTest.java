@@ -6,8 +6,6 @@ import com.innowise.internship.dto.PaymentCardDto;
 import com.innowise.internship.entity.PaymentCard;
 import com.innowise.internship.entity.User;
 import com.innowise.internship.dto.UserDto;
-import com.innowise.internship.entity.PaymentCard;
-import com.innowise.internship.entity.User;
 import com.innowise.internship.exception.CardLimitExceededException;
 import com.innowise.internship.exception.CardNotFoundException;
 import com.innowise.internship.exception.InvalidRequestException;
@@ -34,12 +32,9 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 

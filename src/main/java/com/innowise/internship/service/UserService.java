@@ -7,7 +7,6 @@ import com.innowise.internship.exception.UserNotFoundException;
 import com.innowise.internship.mapper.UserMapper;
 import com.innowise.internship.specification.UserSpecification;
 import jakarta.transaction.Transactional;
-import org.hibernate.Hibernate;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -40,7 +39,9 @@ public class UserService {
     @Cacheable(value = "users", key = "#id")
     @Transactional()
     public Optional<UserDto> getUserById(Long id) {
-        return userRepository.findById(id).map(userMapper::toDto);
+        Optional<User> user = userRepository.findById(id);
+        user.orElseThrow(() -> new UserNotFoundException(id));
+        return Optional.ofNullable(userMapper.toDto(user.get()));
     }
 
     @Transactional
