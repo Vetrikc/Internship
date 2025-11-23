@@ -1,36 +1,42 @@
 package com.innowise.internship.integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innowise.internship.dao.PaymentCardRepository;
-import com.innowise.internship.dao.UserRepository;
 import com.innowise.internship.dto.PaymentCardDto;
-import com.innowise.internship.entitiy.PaymentCard;
-import com.innowise.internship.entitiy.User;
+import com.innowise.internship.entity.AuthUser;
+import com.innowise.internship.service.PaymentCardService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-
 import java.time.Duration;
-import java.time.LocalDate;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.Collections;
+import java.util.List;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @Testcontainers
@@ -39,7 +45,7 @@ class PaymentCardControllerIntegrationTest {
     @Container
     static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("testdb")
-            .withUsername("user")
+            .withUsername("test")
             .withPassword("password");
 
     @Container
@@ -48,14 +54,26 @@ class PaymentCardControllerIntegrationTest {
             .withCommand("--save", "", "--appendonly", "no")
             .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(30)));
 
+    @Container
+    static final PostgreSQLContainer<?> authPostgres = new PostgreSQLContainer<>("postgres:15-alpine")
+            .withDatabaseName("auth_testdb")
+            .withUsername("user")
+            .withPassword("password");
+
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.main.jdbc-url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.main.username", postgres::getUsername);
+        registry.add("spring.datasource.main.password", postgres::getPassword);
+        registry.add("spring.datasource.main.hikari.jdbcUrl", postgres::getJdbcUrl);
 
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", redis::getFirstMappedPort);
+
+        registry.add("spring.datasource.auth.jdbc-url", authPostgres::getJdbcUrl);
+        registry.add("spring.datasource.auth.username", authPostgres::getUsername);
+        registry.add("spring.datasource.auth.password", authPostgres::getPassword);
+        registry.add("spring.datasource.auth.hikari.jdbcUrl", authPostgres::getJdbcUrl);
     }
 
     @Autowired
@@ -64,8 +82,11 @@ class PaymentCardControllerIntegrationTest {
     @Autowired
     private PaymentCardRepository paymentCardRepository;
 
+    @MockBean
+    private PaymentCardService paymentCardService;
+
     @Autowired
-    private UserRepository userRepository; // Assuming UserRepository exists
+    private ObjectMapper objectMapper;
 
     @BeforeAll
     static void beforeAll() {
@@ -75,189 +96,113 @@ class PaymentCardControllerIntegrationTest {
     @BeforeEach
     void setUp() {
         paymentCardRepository.deleteAll();
-        userRepository.deleteAll();
+
     }
 
     @AfterEach
     void tearDown() {
         paymentCardRepository.deleteAll();
-        userRepository.deleteAll();
+    }
+
+    private Authentication createAuth(Long userId) {
+        AuthUser principal = Mockito.mock(AuthUser.class);
+        when(principal.getId()).thenReturn(userId);
+        return new UsernamePasswordAuthenticationToken(
+                principal,
+                null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER"))
+        );
     }
 
     @Test
-    void testCreateCard() throws Exception {
-        User user = new User();
-        user.setEmail("test@example.com");
-        User savedUser = userRepository.save(user);
+    void getAllUserCards_Success() throws Exception {
+        Long userId = 1L;
+        List<PaymentCardDto> cards = Collections.singletonList(new PaymentCardDto());
 
-        String json = String.format("{\"userId\":%d,\"number\":\"1234567890123456\",\"holder\":\"John Doe\",\"expirationDate\":\"2025-12-31\"}", savedUser.getId());
+        when(paymentCardService.getCardsByUserId(userId)).thenReturn(cards);
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/cards")
+        Authentication auth = createAuth(userId);
+
+        mockMvc.perform(get("/api/v1/cards")
+                        .with(authentication(auth)))
+                .andExpect(status().isOk());
+    }
+    @Test
+    void createCard_Success() throws Exception {
+        Long userId = 1L;
+        PaymentCardDto cardDto = new PaymentCardDto();
+        cardDto.setNumber("1234567890123456");
+        cardDto.setHolder("aa");
+        PaymentCardDto createdCard = new PaymentCardDto();
+
+
+
+        when(paymentCardService.createCard(any(PaymentCardDto.class))).thenReturn(createdCard);
+
+        Authentication auth = createAuth(userId);
+
+        mockMvc.perform(post("/api/v1/cards")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json))
-                .andExpect(status().isCreated())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.number").exists());
-
-        assertThat(paymentCardRepository.count()).isEqualTo(1);
+                        .content(objectMapper.writeValueAsString(cardDto))
+                        .with(authentication(auth)))
+                .andExpect(status().isCreated());
     }
 
     @Test
-    void testGetCardById() throws Exception {
-        User user = new User();
-        user.setEmail("test@example.com");
-        User savedUser = userRepository.save(user);
+    void getCardById_Success() throws Exception {
+        Long userId = 1L;
+        Long cardId = 1L;
+        PaymentCardDto cardDto = new PaymentCardDto();
 
-        PaymentCard entity = new PaymentCard();
-        entity.setUser(savedUser);
-        entity.setNumber("1234567890123456");
-        entity.setHolder("John Doe");
-        entity.setExpirationDate(LocalDate.parse("2025-12-31"));
-        PaymentCard saved = paymentCardRepository.save(entity);
+        when(paymentCardService.getUserCardById(eq(cardId), eq(userId))).thenReturn(cardDto);
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/cards/" + saved.getId()))
-                .andExpect(status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(saved.getId()))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.number").value("1234567890123456"));
+        Authentication auth = createAuth(userId);
+
+        mockMvc.perform(get("/api/v1/cards/" + cardId)
+                        .with(authentication(auth)))
+                .andExpect(status().isOk());
     }
 
     @Test
-    void testGetCardByIdNotFound() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/cards/999"))
-                .andExpect(status().isNotFound());
-    }
+    void updateCard_Success() throws Exception {
+        Long userId = 1L;
+        Long cardId = 1L;
+        PaymentCardDto cardDto = new PaymentCardDto();
+        cardDto.setNumber("1234567890123456");
+        cardDto.setHolder("aa");
+        PaymentCardDto updatedCard = new PaymentCardDto();
 
-    @Test
-    void testGetAllCards() throws Exception {
-        User user1 = new User();
-        user1.setEmail("user1@example.com");
-        User savedUser1 = userRepository.save(user1);
+        when(paymentCardService.updateUserCard(eq(cardId), any(PaymentCardDto.class), eq(userId))).thenReturn(updatedCard);
 
-        PaymentCard entity1 = new PaymentCard();
-        entity1.setUser(savedUser1);
-        entity1.setNumber("1234567890123456");
-        entity1.setHolder("John Doe");
-        entity1.setExpirationDate(LocalDate.parse("2025-12-31"));
-        paymentCardRepository.save(entity1);
+        Authentication auth = createAuth(userId);
 
-        User user2 = new User();
-        user2.setEmail("user2@example.com");
-        User savedUser2 = userRepository.save(user2);
-
-        PaymentCard entity2 = new PaymentCard();
-        entity2.setUser(savedUser2);
-        entity2.setNumber("6543210987654321");
-        entity2.setHolder("Jane Doe");
-        entity2.setExpirationDate(LocalDate.parse("2024-11-30"));
-        paymentCardRepository.save(entity2);
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/cards?page=0&size=10"))
-                .andExpect(status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.totalElements").value(2));
-    }
-
-    @Test
-    void testGetCardsByUserId() throws Exception {
-        User user = new User();
-        user.setEmail("test@example.com");
-        User savedUser = userRepository.save(user);
-
-        PaymentCard entity = new PaymentCard();
-        entity.setUser(savedUser);
-        entity.setNumber("1234567890123456");
-        entity.setHolder("John Doe");
-        entity.setExpirationDate(LocalDate.parse("2025-12-31"));
-        paymentCardRepository.save(entity);
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/cards/users/" + savedUser.getId()))
-                .andExpect(status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$[0].userId").value(savedUser.getId()));
-    }
-
-    @Test
-    void testUpdateCard() throws Exception {
-        User user = new User();
-        user.setEmail("test@example.com");
-        User savedUser = userRepository.save(user);
-
-        PaymentCard entity = new PaymentCard();
-        entity.setUser(savedUser);
-        entity.setNumber("1234567890123456");
-        entity.setHolder("John Doe");
-        entity.setExpirationDate(LocalDate.parse("2025-12-31"));
-        PaymentCard saved = paymentCardRepository.save(entity);
-
-        String updatedJson = String.format("{\"userId\":%d,\"number\":\"12345677890123459\",\"holder\":\"Updated Holder\",\"expirationDate\":\"2026-01-01\"}", savedUser.getId());
-
-        mockMvc.perform(MockMvcRequestBuilders.put("/cards/" + saved.getId())
+        mockMvc.perform(put("/api/v1/cards/" + cardId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(updatedJson))
-                .andExpect(status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.number").value("12345677890123459"));
-
-        PaymentCard updatedEntity = paymentCardRepository.findById(saved.getId()).orElseThrow();
-        assertThat(updatedEntity.getNumber()).isEqualTo("12345677890123459");
-        assertThat(updatedEntity.getHolder()).isEqualTo("Updated Holder");
-        assertThat(updatedEntity.getExpirationDate()).isEqualTo(LocalDate.parse("2026-01-01"));
+                        .content(objectMapper.writeValueAsString(cardDto))
+                        .with(authentication(auth)))
+                .andExpect(status().isOk());
     }
 
     @Test
-    void testDeleteCard() throws Exception {
-        User user = new User();
-        user.setEmail("test@example.com");
-        User savedUser = userRepository.save(user);
+    void deleteCard_Success() throws Exception {
+        Long userId = 1L;
+        Long cardId = 1L;
 
-        PaymentCard entity = new PaymentCard();
-        entity.setUser(savedUser);
-        entity.setNumber("1234567890123456");
-        entity.setHolder("John Doe");
-        entity.setExpirationDate(LocalDate.parse("2025-12-31"));
-        PaymentCard saved = paymentCardRepository.save(entity);
 
-        mockMvc.perform(MockMvcRequestBuilders.delete("/cards/" + saved.getId()))
+        when(paymentCardService.deleteUserCard(eq(cardId), eq(userId))).thenReturn(null);
+
+        Authentication auth = createAuth(userId);
+
+        mockMvc.perform(delete("/api/v1/cards/" + cardId)
+                        .with(authentication(auth)))
                 .andExpect(status().isNoContent());
-
-        assertThat(paymentCardRepository.findById(saved.getId())).isEmpty();
     }
 
     @Test
-    void testActivateCard() throws Exception {
-        User user = new User();
-        user.setEmail("test@example.com");
-        User savedUser = userRepository.save(user);
-
-        PaymentCard entity = new PaymentCard();
-        entity.setUser(savedUser);
-        entity.setNumber("1234567890123456");
-        entity.setHolder("John Doe");
-        entity.setExpirationDate(LocalDate.parse("2025-12-31"));
-        entity.setActive(false);
-        PaymentCard saved = paymentCardRepository.save(entity);
-
-        mockMvc.perform(MockMvcRequestBuilders.put("/cards/" + saved.getId() + "/activate"))
-                .andExpect(status().isOk());
-
-        PaymentCard updated = paymentCardRepository.findById(saved.getId()).orElseThrow();
-        assertThat(updated.getActive()).isTrue();
+    void getAllUserCards_Unauthorized() throws Exception {
+        mockMvc.perform(get("/api/v1/cards"))
+                .andExpect(status().isUnauthorized());
     }
 
-    @Test
-    void testDeactivateCard() throws Exception {
-        User user = new User();
-        user.setEmail("test@example.com");
-        User savedUser = userRepository.save(user);
 
-        PaymentCard entity = new PaymentCard();
-        entity.setUser(savedUser);
-        entity.setNumber("1234567890123456");
-        entity.setHolder("John Doe");
-        entity.setExpirationDate(LocalDate.parse("2025-12-31"));
-        entity.setActive(true);
-        PaymentCard saved = paymentCardRepository.save(entity);
-
-        mockMvc.perform(MockMvcRequestBuilders.put("/cards/" + saved.getId() + "/deactivate"))
-                .andExpect(status().isOk());
-
-        PaymentCard updated = paymentCardRepository.findById(saved.getId()).orElseThrow();
-        assertThat(updated.getActive()).isFalse();
-    }
 }

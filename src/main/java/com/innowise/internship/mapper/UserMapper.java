@@ -1,7 +1,7 @@
 package com.innowise.internship.mapper;
 
 import com.innowise.internship.dto.UserDto;
-import com.innowise.internship.entitiy.User;
+import com.innowise.internship.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

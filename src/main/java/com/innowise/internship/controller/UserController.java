@@ -1,17 +1,21 @@
 package com.innowise.internship.controller;
 
 import com.innowise.internship.dto.UserDto;
-import com.innowise.internship.exception.UserNotFoundException;
+import com.innowise.internship.entity.AuthUser;
 import com.innowise.internship.service.UserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/v1/users")
+@Tag(name = "Пользователи", description = "Управление пользователями")
+@PreAuthorize("hasRole('USER')")
 public class UserController {
 
     private final UserService userService;
@@ -20,48 +24,18 @@ public class UserController {
         this.userService = userService;
     }
 
-    @PostMapping
-    public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserDto userDto) {
-        UserDto createdUser = userService.createUser(userDto);
-        return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
-        return userService.getUserById(id)
-                .map(userDto -> new ResponseEntity<>(userDto, HttpStatus.OK))
-                .orElseThrow(() -> new UserNotFoundException("User not found id:" + id));
-    }
-
-    @GetMapping
-    public ResponseEntity<Page<UserDto>> getAllUsers(Pageable pageable,
-                                                     @RequestParam(required = false) String name,
-                                                     @RequestParam(required = false) String surname) {
-        Page<UserDto> users = userService.getAllUsers(pageable, name, surname);
-        return new ResponseEntity<>(users, HttpStatus.OK);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @Valid @RequestBody UserDto userDto) {
-        UserDto updatedUser = userService.updateUser(id, userDto);
+    @PutMapping()
+    public ResponseEntity<UserDto> updateUser( @Valid @RequestBody UserDto userDto,Authentication authentication) {
+        AuthUser userDetails = (AuthUser) authentication.getPrincipal();
+        Long userId = userDetails.getId();
+        UserDto updatedUser = userService.updateUser(userId, userDto);
         return new ResponseEntity<>(updatedUser, HttpStatus.OK);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUserInfo(Authentication authentication){
+        AuthUser userDetails = (AuthUser) authentication.getPrincipal();
+        return new ResponseEntity<>(userService.getUserById(userDetails.getId()), HttpStatus.OK);
     }
 
-    @PutMapping("/{id}/activate")
-    public ResponseEntity<Void> activateUser(@PathVariable Long id) {
-        userService.activateUser(id);
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
-
-    @PutMapping("/{id}/deactivate")
-    public ResponseEntity<Void> deactivateUser(@PathVariable Long id) {
-        userService.deactivateUser(id);
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
 }

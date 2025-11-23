@@ -1,7 +1,7 @@
 package com.innowise.internship.mapper;
 
 import com.innowise.internship.dto.PaymentCardDto;
-import com.innowise.internship.entitiy.PaymentCard;
+import com.innowise.internship.entity.PaymentCard;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

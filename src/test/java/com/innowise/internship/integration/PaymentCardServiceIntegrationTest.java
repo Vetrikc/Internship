@@ -3,9 +3,9 @@ package com.innowise.internship.integration;
 import com.innowise.internship.dao.PaymentCardRepository;
 import com.innowise.internship.dao.UserRepository;
 import com.innowise.internship.dto.PaymentCardDto;
+import com.innowise.internship.entity.PaymentCard;
+import com.innowise.internship.entity.User;
 import com.innowise.internship.dto.UserDto;
-import com.innowise.internship.entitiy.PaymentCard;
-import com.innowise.internship.entitiy.User;
 import com.innowise.internship.exception.CardLimitExceededException;
 import com.innowise.internship.exception.CardNotFoundException;
 import com.innowise.internship.exception.InvalidRequestException;
@@ -16,10 +16,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,12 +32,9 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -58,14 +55,26 @@ class PaymentCardServiceIntegrationTest {
             .withCommand("--save", "", "--appendonly", "no")
             .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(30)));
 
+    @Container
+    static final PostgreSQLContainer<?> authPostgres = new PostgreSQLContainer<>("postgres:15-alpine")
+            .withDatabaseName("auth_testdb")
+            .withUsername("user")
+            .withPassword("password");
+
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.main.jdbc-url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.main.username", postgres::getUsername);
+        registry.add("spring.datasource.main.password", postgres::getPassword);
+        registry.add("spring.datasource.main.hikari.jdbcUrl", postgres::getJdbcUrl);
 
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", redis::getFirstMappedPort);
+
+        registry.add("spring.datasource.auth.jdbc-url", authPostgres::getJdbcUrl);
+        registry.add("spring.datasource.auth.username", authPostgres::getUsername);
+        registry.add("spring.datasource.auth.password", authPostgres::getPassword);
+        registry.add("spring.datasource.auth.hikari.jdbcUrl", authPostgres::getJdbcUrl);
     }
 
     @Autowired
@@ -96,6 +105,7 @@ class PaymentCardServiceIntegrationTest {
 
         // Create a test user
         testUser = new User();
+        testUser.setId(1L);
         testUser.setName("Test User");
         testUser.setEmail("testuser@example.com"); // Add this to satisfy the NOT NULL constraint
         // If surname or other fields are also required, set them here (e.g., testUser.setSurname("Test"));
@@ -177,16 +187,14 @@ class PaymentCardServiceIntegrationTest {
         card.setActive(true);
         PaymentCard saved = paymentCardRepository.save(card);
 
-        Optional<PaymentCardDto> found = paymentCardService.getCardById(saved.getId());
+        PaymentCardDto found = paymentCardService.getCardById(saved.getId());
 
-        assertTrue(found.isPresent());
-        assertEquals(saved.getNumber(), found.get().getNumber());
+        assertEquals(saved.getNumber(), found.getNumber());
     }
 
     @Test
-    void getCardByIdNotFoundReturnsEmpty() {
-        Optional<PaymentCardDto> found = paymentCardService.getCardById(999L);
-        assertFalse(found.isPresent());
+    void getCardByIdNotFound() {
+        assertThrows(CardNotFoundException.class, () -> paymentCardService.getCardById(999L));
     }
 
     @Test

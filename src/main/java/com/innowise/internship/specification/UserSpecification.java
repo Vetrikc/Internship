@@ -1,6 +1,6 @@
 package com.innowise.internship.specification;
 
-import com.innowise.internship.entitiy.User;
+import com.innowise.internship.entity.User;
 import org.springframework.data.jpa.domain.Specification;
 
 public class UserSpecification {

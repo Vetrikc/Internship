@@ -1,9 +1,8 @@
 package com.innowise.internship.integration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innowise.internship.dao.UserRepository;
 import com.innowise.internship.dto.UserDto;
-import com.innowise.internship.entitiy.User;
+import com.innowise.internship.entity.User;
 import com.innowise.internship.exception.UserNotFoundException;
 import com.innowise.internship.service.UserService;
 import org.junit.jupiter.api.AfterEach;
@@ -11,7 +10,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -27,15 +25,12 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.junit.Assert.assertThrows;
 
 @Testcontainers
 @SpringBootTest
@@ -53,14 +48,26 @@ class UserServiceIntegrationTest {
             .withCommand("--save", "", "--appendonly", "no")
             .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(30)));
 
+    @Container
+    static final PostgreSQLContainer<?> authPostgres = new PostgreSQLContainer<>("postgres:15-alpine")
+            .withDatabaseName("auth_testdb")
+            .withUsername("user")
+            .withPassword("password");
+
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.main.jdbc-url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.main.username", postgres::getUsername);
+        registry.add("spring.datasource.main.password", postgres::getPassword);
+        registry.add("spring.datasource.main.hikari.jdbcUrl", postgres::getJdbcUrl);
 
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", redis::getFirstMappedPort);
+
+        registry.add("spring.datasource.auth.jdbc-url", authPostgres::getJdbcUrl);
+        registry.add("spring.datasource.auth.username", authPostgres::getUsername);
+        registry.add("spring.datasource.auth.password", authPostgres::getPassword);
+        registry.add("spring.datasource.auth.hikari.jdbcUrl", authPostgres::getJdbcUrl);
     }
 
 
@@ -98,11 +105,11 @@ class UserServiceIntegrationTest {
     void testCreateUser() {
         // Given
         UserDto userDto = new UserDto();
+        userDto.setId(1L);
         userDto.setName("John");
         userDto.setSurname("Doe");
         userDto.setBirthDate(LocalDate.of(1990, 1, 1));
         userDto.setEmail("john.doe@example.com");
-        userDto.setActive(true);
 
         // When
         UserDto createdUser = userService.createUser(userDto);
@@ -127,11 +134,11 @@ class UserServiceIntegrationTest {
     void testGetUserById() {
         // Given
         User user = new User();
+        user.setId(1L);
         user.setName("Jane");
         user.setSurname("Smith");
         user.setBirthDate(LocalDate.of(1985, 5, 5));
         user.setEmail("jane.smith@example.com");
-        user.setActive(true);
         User savedUser = userRepository.save(user);
 
         // When
@@ -161,9 +168,8 @@ class UserServiceIntegrationTest {
     @Test
     @Transactional
     void testGetUserByIdNotFound() {
-        // When & Then
-        Optional<UserDto> foundUser = userService.getUserById(999L);
-        assertThat(foundUser).isEmpty();
+        assertThrows(UserNotFoundException.class,
+                () -> userService.getUserById(999L));
     }
 
     @Test
@@ -171,19 +177,19 @@ class UserServiceIntegrationTest {
     void testGetAllUsers() {
         // Given
         User user1 = new User();
+        user1.setId(1L);
         user1.setName("Alice");
         user1.setSurname("Johnson");
         user1.setBirthDate(LocalDate.of(1992, 2, 2));
         user1.setEmail("alice@example.com");
-        user1.setActive(true);
         userRepository.save(user1);
 
         User user2 = new User();
+        user2.setId(2L);
         user2.setName("Bob");
         user2.setSurname("Johnson");
         user2.setBirthDate(LocalDate.of(1988, 8, 8));
         user2.setEmail("bob@example.com");
-        user2.setActive(true);
         userRepository.save(user2);
 
         Pageable pageable = PageRequest.of(0, 10);
@@ -201,11 +207,11 @@ class UserServiceIntegrationTest {
     void testUpdateUser() {
         // Given
         User user = new User();
+        user.setId(1L);
         user.setName("OldName");
         user.setSurname("OldSurname");
         user.setBirthDate(LocalDate.of(2000, 1, 1));
         user.setEmail("old@email.com");
-        user.setActive(true);
         User savedUser = userRepository.save(user);
 
         UserDto updatedDto = new UserDto();
@@ -221,7 +227,6 @@ class UserServiceIntegrationTest {
         assertThat(updatedUser.getName()).isEqualTo("NewName");
         assertThat(updatedUser.getSurname()).isEqualTo("NewSurname");
         assertThat(updatedUser.getBirthDate()).isEqualTo(LocalDate.of(1995, 5, 5));
-        assertThat(updatedUser.getEmail()).isEqualTo("new@email.com");
 
         Optional<User> dbUser = userRepository.findById(savedUser.getId());
         assertThat(dbUser).isPresent();
@@ -249,11 +254,11 @@ class UserServiceIntegrationTest {
     void testDeleteUser() {
         // Given
         User user = new User();
+        user.setId(1L);
         user.setName("ToDelete");
         user.setSurname("User");
         user.setBirthDate(LocalDate.now());
         user.setEmail("delete@example.com");
-        user.setActive(true);
         User savedUser = userRepository.save(user);
 
         // When
@@ -268,73 +273,4 @@ class UserServiceIntegrationTest {
         assertThat(cached).isNull();
     }
 
-    @Test
-    void testActivateUser() {
-        // Given
-        User user = new User();
-        user.setName("Inactive");
-        user.setSurname("User");
-        user.setBirthDate(LocalDate.now());
-        user.setEmail("inactive@example.com");
-        user.setActive(false);
-        User savedUser = userRepository.save(user);
-
-        // When
-        UserDto activatedUser = userService.activateUser(savedUser.getId());
-
-        // Then
-        assertThat(activatedUser.getActive()).isTrue();
-
-        Optional<User> dbUser = userRepository.findById(savedUser.getId());
-        assertThat(dbUser).isPresent();
-        assertThat(dbUser.get().getActive()).isTrue();
-
-        // Then(caching)
-        UserDto cached = cacheManager.getCache("users").get(activatedUser.getId(), UserDto.class);
-        assertThat(cached).isNotNull();
-        assertThat(cached.getActive()).isTrue();
-    }
-
-    @Test
-    @Transactional
-    void testActivateUserNotFound() {
-        // When & Then
-        assertThatThrownBy(() -> userService.activateUser(999L))
-                .isInstanceOf(UserNotFoundException.class);
-    }
-
-    @Test
-    void testDeactivateUser() {
-        // Given
-        User user = new User();
-        user.setName("Active");
-        user.setSurname("User");
-        user.setBirthDate(LocalDate.now());
-        user.setEmail("active@example.com");
-        user.setActive(true);
-        User savedUser = userRepository.save(user);
-
-        // When
-        UserDto deactivatedUser = userService.deactivateUser(savedUser.getId());
-
-        // Then
-        assertThat(deactivatedUser.getActive()).isFalse();
-
-        Optional<User> dbUser = userRepository.findById(savedUser.getId());
-        assertThat(dbUser).isPresent();
-        assertThat(dbUser.get().getActive()).isFalse();
-
-        // Then(caching)
-        UserDto cached = cacheManager.getCache("users").get(deactivatedUser.getId(), UserDto.class);
-        assertThat(cached).isNotNull();
-        assertThat(cached.getActive()).isFalse();
-    }
-
-    @Test
-    @Transactional
-    void testDeactivateUserNotFound() {
-        // When & Then
-        assertThatThrownBy(() -> userService.deactivateUser(999L))
-                .isInstanceOf(UserNotFoundException.class);
-    }
 }

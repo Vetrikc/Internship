@@ -1,8 +1,8 @@
 package com.innowise.internship.service;
 
 import com.innowise.internship.dto.PaymentCardDto;
-import com.innowise.internship.entitiy.PaymentCard;
-import com.innowise.internship.entitiy.User;
+import com.innowise.internship.entity.PaymentCard;
+import com.innowise.internship.entity.User;
 import com.innowise.internship.exception.CardLimitExceededException;
 import com.innowise.internship.exception.CardNotFoundException;
 import com.innowise.internship.exception.InvalidRequestException;
@@ -22,15 +22,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -116,8 +112,10 @@ class PaymentCardServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(paymentCardRepository.countByUserId(1L)).thenReturn(4L);
         when(paymentCardMapper.toEntity(paymentCardDto)).thenReturn(paymentCard);
-        when(userRepository.save(user)).thenReturn(user);
+        when(paymentCardRepository.save(paymentCard)).thenReturn(paymentCard);
+
         when(paymentCardMapper.toDto(paymentCard)).thenReturn(paymentCardDto);
+
 
         PaymentCardDto result = paymentCardService.createCard(paymentCardDto);
 
@@ -125,7 +123,7 @@ class PaymentCardServiceTest {
         verify(userRepository).findById(1L);
         verify(paymentCardRepository).countByUserId(1L);
         verify(paymentCardMapper).toEntity(paymentCardDto);
-        verify(userRepository).save(user);
+        verify(paymentCardRepository).save(paymentCard);
         verify(paymentCardMapper).toDto(paymentCard);
     }
 
@@ -134,10 +132,10 @@ class PaymentCardServiceTest {
         when(paymentCardRepository.findById(1L)).thenReturn(Optional.of(paymentCard));
         when(paymentCardMapper.toDto(paymentCard)).thenReturn(paymentCardDto);
 
-        Optional<PaymentCardDto> result = paymentCardService.getCardById(1L);
+        PaymentCardDto result = paymentCardService.getCardById(1L);
 
-        assertTrue(result.isPresent());
-        assertEquals(paymentCardDto, result.get());
+        assertNotNull(result);
+        assertEquals(paymentCardDto, result);
         verify(paymentCardRepository).findById(1L);
         verify(paymentCardMapper).toDto(paymentCard);
         verifyNoInteractions(cache);
@@ -147,9 +145,9 @@ class PaymentCardServiceTest {
     void getCardByIdCardNotFoundReturnsEmptyOptional() {
         when(paymentCardRepository.findById(1L)).thenReturn(Optional.empty());
 
-        Optional<PaymentCardDto> result = paymentCardService.getCardById(1L);
+        assertThrows(CardNotFoundException.class,
+                () -> paymentCardService.getCardById(1L));
 
-        assertFalse(result.isPresent());
         verify(paymentCardRepository).findById(1L);
         verifyNoInteractions(paymentCardMapper, cache);
     }
@@ -164,7 +162,7 @@ class PaymentCardServiceTest {
         Page<PaymentCardDto> result = paymentCardService.getAllCards(pageable);
 
         assertEquals(1, result.getContent().size());
-        assertEquals(paymentCardDto, result.getContent().get(0));
+        assertEquals(paymentCardDto, result.getContent().getFirst());
         verify(paymentCardRepository).findAll(pageable);
         verify(paymentCardMapper).toDto(paymentCard);
         verifyNoInteractions(cache);
@@ -178,7 +176,7 @@ class PaymentCardServiceTest {
         List<PaymentCardDto> result = paymentCardService.getCardsByUserId(1L);
 
         assertEquals(1, result.size());
-        assertEquals(paymentCardDto, result.get(0));
+        assertEquals(paymentCardDto, result.getFirst());
         verify(paymentCardRepository).findByUserId(1L);
         verify(paymentCardMapper).toDto(paymentCard);
         verifyNoInteractions(cache);

@@ -1,6 +1,6 @@
 package com.innowise.internship.dao;
 
-import com.innowise.internship.entitiy.User;
+import com.innowise.internship.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
