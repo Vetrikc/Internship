@@ -87,7 +87,7 @@ public class AuthController {
         UserDto createdUserDto = userService.createUser(userDto);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("message", createdUserDto));
+                .body(createdUserDto);
     }
 
     // Refresh token endpoint

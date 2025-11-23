@@ -148,12 +148,12 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("Неверный email или пароль"));
+                .andExpect(jsonPath("$.error").value("Invalid email or password"));
     }
 
     @Test
     void register_Success() throws Exception {
-        String email = "new@example.com";
+        String email = "new1@example.com";
         String password = "password";
         RegisterRequest request = new RegisterRequest();
         request.setEmail(email);
@@ -169,16 +169,26 @@ class AuthControllerTest {
         authUser.setRole(Role.USER);
         authUser.setActive(true);
 
+        UserDto userDto = new UserDto();
+        userDto.setId(1L);
+        userDto.setEmail(email);
+        userDto.setName("John");
+        userDto.setSurname("Doe");
+        userDto.setBirthDate(LocalDate.of(1990, 1, 1));
+
         when(customUserDetailsService.existsByEmail(email)).thenReturn(false);
         when(passwordEncoder.encode(password)).thenReturn("encoded");
         when(customUserDetailsService.createAuthUser(any(AuthUser.class))).thenReturn(authUser);
-        when(userService.createUser(any(UserDto.class))).thenReturn(null);
+        when(userService.createUser(any(UserDto.class))).thenReturn(userDto);
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.message").value("User has been created"));
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.email").value(email))
+                .andExpect(jsonPath("$.name").value("John"))
+                .andExpect(jsonPath("$.surname").value("Doe"));
     }
 
     @Test
@@ -194,7 +204,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Email уже зарегистрирован"));
+                .andExpect(jsonPath("$.error").value("The Email is already registered"));
     }
 
     @Test
