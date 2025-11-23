@@ -111,9 +111,9 @@ class UserServiceTest {
     void getUserByIdNotFound() {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-        Optional<UserDto> result = userService.getUserById(1L);
+        assertThrows(UserNotFoundException.class,
+                () -> userService.getUserById(1L));
 
-        assertFalse(result.isPresent());
         verify(userRepository).findById(1L);
         verifyNoInteractions(userMapper);
     }
