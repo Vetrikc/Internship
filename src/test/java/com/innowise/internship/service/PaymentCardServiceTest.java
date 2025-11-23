@@ -116,8 +116,10 @@ class PaymentCardServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(paymentCardRepository.countByUserId(1L)).thenReturn(4L);
         when(paymentCardMapper.toEntity(paymentCardDto)).thenReturn(paymentCard);
-        when(userRepository.save(user)).thenReturn(user);
+        when(paymentCardRepository.save(paymentCard)).thenReturn(paymentCard);
+
         when(paymentCardMapper.toDto(paymentCard)).thenReturn(paymentCardDto);
+
 
         PaymentCardDto result = paymentCardService.createCard(paymentCardDto);
 
@@ -125,7 +127,7 @@ class PaymentCardServiceTest {
         verify(userRepository).findById(1L);
         verify(paymentCardRepository).countByUserId(1L);
         verify(paymentCardMapper).toEntity(paymentCardDto);
-        verify(userRepository).save(user);
+        verify(paymentCardRepository).save(paymentCard);
         verify(paymentCardMapper).toDto(paymentCard);
     }
 
@@ -147,9 +149,9 @@ class PaymentCardServiceTest {
     void getCardByIdCardNotFoundReturnsEmptyOptional() {
         when(paymentCardRepository.findById(1L)).thenReturn(Optional.empty());
 
-        PaymentCardDto result = paymentCardService.getCardById(1L);
+        assertThrows(CardNotFoundException.class,
+                () -> paymentCardService.getCardById(1L));
 
-        assertNotNull(result);
         verify(paymentCardRepository).findById(1L);
         verifyNoInteractions(paymentCardMapper, cache);
     }
