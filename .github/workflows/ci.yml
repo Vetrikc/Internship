@@ -42,14 +42,14 @@ jobs:
       - name: Cache Gradle packages
         uses: actions/cache@v4
         with:
-            path: ~/.gradle/caches
-            key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-            restore-keys: ${{ runner.os }}-gradle
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+          restore-keys: ${{ runner.os }}-gradle
 
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew build sonar --info test
+        run: ./gradlew build sonar --info
 
       - name: Build Docker image
         run: docker build -t my-spring-app .
