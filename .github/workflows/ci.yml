@@ -29,7 +29,7 @@ jobs:
 
       # 3. Сборка и тесты (Gradle)
       - name: Build & Test
-        run: ./gradlew clean build -x test
+        run: ./gradlew clean build test
 
       # 4. Анализ кода SonarQube
       - name: SonarQube Scan
@@ -49,7 +49,7 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew build sonar --info -x test
+        run: ./gradlew build sonar --info test
 
       - name: Build Docker image
         run: docker build -t my-spring-app .

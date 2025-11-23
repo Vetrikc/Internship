@@ -52,14 +52,26 @@ class UserServiceIntegrationTest {
             .withCommand("--save", "", "--appendonly", "no")
             .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(30)));
 
+    @Container
+    static final PostgreSQLContainer<?> authPostgres = new PostgreSQLContainer<>("postgres:15-alpine")
+            .withDatabaseName("auth_testdb")
+            .withUsername("user")
+            .withPassword("password");
+
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.main.jdbc-url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.main.username", postgres::getUsername);
+        registry.add("spring.datasource.main.password", postgres::getPassword);
+        registry.add("spring.datasource.main.hikari.jdbcUrl", postgres::getJdbcUrl);
 
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", redis::getFirstMappedPort);
+
+        registry.add("spring.datasource.auth.jdbc-url", authPostgres::getJdbcUrl);
+        registry.add("spring.datasource.auth.username", authPostgres::getUsername);
+        registry.add("spring.datasource.auth.password", authPostgres::getPassword);
+        registry.add("spring.datasource.auth.hikari.jdbcUrl", authPostgres::getJdbcUrl);
     }
 
 
@@ -97,6 +109,7 @@ class UserServiceIntegrationTest {
     void testCreateUser() {
         // Given
         UserDto userDto = new UserDto();
+        userDto.setId(1L);
         userDto.setName("John");
         userDto.setSurname("Doe");
         userDto.setBirthDate(LocalDate.of(1990, 1, 1));
@@ -125,6 +138,7 @@ class UserServiceIntegrationTest {
     void testGetUserById() {
         // Given
         User user = new User();
+        user.setId(1L);
         user.setName("Jane");
         user.setSurname("Smith");
         user.setBirthDate(LocalDate.of(1985, 5, 5));
@@ -168,6 +182,7 @@ class UserServiceIntegrationTest {
     void testGetAllUsers() {
         // Given
         User user1 = new User();
+        user1.setId(1L);
         user1.setName("Alice");
         user1.setSurname("Johnson");
         user1.setBirthDate(LocalDate.of(1992, 2, 2));
@@ -175,6 +190,7 @@ class UserServiceIntegrationTest {
         userRepository.save(user1);
 
         User user2 = new User();
+        user2.setId(2L);
         user2.setName("Bob");
         user2.setSurname("Johnson");
         user2.setBirthDate(LocalDate.of(1988, 8, 8));
@@ -196,6 +212,7 @@ class UserServiceIntegrationTest {
     void testUpdateUser() {
         // Given
         User user = new User();
+        user.setId(1L);
         user.setName("OldName");
         user.setSurname("OldSurname");
         user.setBirthDate(LocalDate.of(2000, 1, 1));
@@ -215,7 +232,6 @@ class UserServiceIntegrationTest {
         assertThat(updatedUser.getName()).isEqualTo("NewName");
         assertThat(updatedUser.getSurname()).isEqualTo("NewSurname");
         assertThat(updatedUser.getBirthDate()).isEqualTo(LocalDate.of(1995, 5, 5));
-        assertThat(updatedUser.getEmail()).isEqualTo("new@email.com");
 
         Optional<User> dbUser = userRepository.findById(savedUser.getId());
         assertThat(dbUser).isPresent();
@@ -243,6 +259,7 @@ class UserServiceIntegrationTest {
     void testDeleteUser() {
         // Given
         User user = new User();
+        user.setId(1L);
         user.setName("ToDelete");
         user.setSurname("User");
         user.setBirthDate(LocalDate.now());

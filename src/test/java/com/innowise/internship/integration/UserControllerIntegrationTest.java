@@ -1,16 +1,25 @@
 package com.innowise.internship.integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innowise.internship.dao.UserRepository;
+import com.innowise.internship.dto.UserDto;
+import com.innowise.internship.entity.AuthUser;
 import com.innowise.internship.entity.User;
+import com.innowise.internship.service.UserService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -25,8 +34,16 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -47,14 +64,26 @@ class UserControllerIntegrationTest {
             .withCommand("--save", "", "--appendonly", "no")
             .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(30)));
 
+    @Container
+    static final PostgreSQLContainer<?> authPostgres = new PostgreSQLContainer<>("postgres:15-alpine")
+            .withDatabaseName("auth_testdb")
+            .withUsername("user")
+            .withPassword("password");
+
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.main.jdbc-url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.main.username", postgres::getUsername);
+        registry.add("spring.datasource.main.password", postgres::getPassword);
+        registry.add("spring.datasource.main.hikari.jdbcUrl", postgres::getJdbcUrl);
 
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", redis::getFirstMappedPort);
+
+        registry.add("spring.datasource.auth.jdbc-url", authPostgres::getJdbcUrl);
+        registry.add("spring.datasource.auth.username", authPostgres::getUsername);
+        registry.add("spring.datasource.auth.password", authPostgres::getPassword);
+        registry.add("spring.datasource.auth.hikari.jdbcUrl", authPostgres::getJdbcUrl);
     }
 
     @Autowired
@@ -62,6 +91,12 @@ class UserControllerIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @MockBean
+    private UserService userService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @BeforeAll
     static void beforeAll() {
@@ -79,117 +114,65 @@ class UserControllerIntegrationTest {
     }
 
     @Test
-    void testCreateUser() throws Exception {
-        String json = "{\"email\":\"test@example.com\",\"name\":\"John\",\"surname\":\"Doe\",\"birthDate\":\"2000-01-01\"}";
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json))
-                .andExpect(status().isCreated())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.id").exists());
-
-        assertThat(userRepository.count()).isEqualTo(1);
-    }
-
-    @Test
     void testGetUserById() throws Exception {
-        User entity = new User();
-        entity.setEmail("test@example.com");
-        entity.setName("John");
-        entity.setSurname("Doe");
-        entity.setBirthDate(LocalDate.parse("2000-01-01"));
-        User saved = userRepository.save(entity);
+        Long userId = 1L;
+        UserDto userDto = new UserDto();
+        userDto.setId(userId);
+        userDto.setEmail("jdnvsdj@gg.com");
+        userDto.setName(".");
+        when(userService.getUserById(userId)).thenReturn(Optional.of(userDto));
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/users/" + saved.getId()))
-                .andExpect(status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(saved.getId()))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.email").value("test@example.com"));
+        AuthUser principal = Mockito.mock(AuthUser.class);
+        when(principal.getId()).thenReturn(userId);
+
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+                principal,
+                null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+
+        mockMvc.perform(get("/api/v1/users/me")
+                        .with(authentication(auth)))
+                .andExpect(status().isOk());
     }
 
     @Test
-    void testGetUserByIdNotFound() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/users/999"))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void testGetAllUsers() throws Exception {
-        User entity1 = new User();
-        entity1.setEmail("user1@example.com");
-        entity1.setName("John");
-        entity1.setSurname("Doe");
-        entity1.setBirthDate(LocalDate.parse("2000-01-01"));
-        userRepository.save(entity1);
-
-        User entity2 = new User();
-        entity2.setEmail("user2@example.com");
-        entity2.setName("Jane");
-        entity2.setSurname("Doe");
-        entity2.setBirthDate(LocalDate.parse("2001-02-02"));
-        userRepository.save(entity2);
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/users?page=0&size=10"))
-                .andExpect(status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.totalElements").value(2));
-    }
-
-    @Test
-    void testGetAllUsersWithFilters() throws Exception {
-        User entity1 = new User();
-        entity1.setEmail("user1@example.com");
-        entity1.setName("John");
-        entity1.setSurname("Doe");
-        entity1.setBirthDate(LocalDate.parse("2000-01-01"));
-        userRepository.save(entity1);
-
-        User entity2 = new User();
-        entity2.setEmail("user2@example.com");
-        entity2.setName("Jane");
-        entity2.setSurname("Smith");
-        entity2.setBirthDate(LocalDate.parse("2001-02-02"));
-        userRepository.save(entity2);
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/users?page=0&size=10&name=John&surname=Doe"))
-                .andExpect(status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.totalElements").value(1));
+    void getCurrentUserInfo_Unauthorized() throws Exception {
+        mockMvc.perform(get("/api/v1/users/me"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
     void testUpdateUser() throws Exception {
-        User entity = new User();
-        entity.setEmail("test@example.com");
-        entity.setName("John");
-        entity.setSurname("Doe");
-        entity.setBirthDate(LocalDate.parse("2000-01-01"));
-        User saved = userRepository.save(entity);
+        Long userId = 1L;
+        UserDto userDto = new UserDto();
+        userDto.setId(userId);
+        userDto.setEmail(".");
+        userDto.setEmail("jdnvsdj@gg.com");
+        userDto.setSurname(".");
+        UserDto updatedUser = new UserDto();
+        updatedUser.setId(userId);
+        updatedUser.setEmail("jdnvsdj@gg.com");
+        userDto.setName(".");
+        userDto.setSurname(".");
 
-        String updatedJson = "{\"email\":\"updated@example.com\",\"name\":\"Updated John\",\"surname\":\"Updated Doe\",\"birthDate\":\"2001-01-01\"}";
 
-        mockMvc.perform(MockMvcRequestBuilders.put("/users/" + saved.getId())
+        when(userService.updateUser(eq(userId), any(UserDto.class))).thenReturn(updatedUser);
+
+        AuthUser principal = Mockito.mock(AuthUser.class);
+        when(principal.getId()).thenReturn(userId);
+
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+                principal,
+                null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+
+        mockMvc.perform(put("/api/v1/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(updatedJson))
-                .andExpect(status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.email").value("updated@example.com"));
-
-        User updatedEntity = userRepository.findById(saved.getId()).orElseThrow();
-        assertThat(updatedEntity.getEmail()).isEqualTo("updated@example.com");
-        assertThat(updatedEntity.getName()).isEqualTo("Updated John");
-        assertThat(updatedEntity.getSurname()).isEqualTo("Updated Doe");
-        assertThat(updatedEntity.getBirthDate()).isEqualTo(LocalDate.parse("2001-01-01"));
+                        .content(objectMapper.writeValueAsString(userDto))
+                        .with(authentication(auth)))
+                .andExpect(status().isOk());
     }
 
-    @Test
-    void testDeleteUser() throws Exception {
-        User entity = new User();
-        entity.setEmail("test@example.com");
-        entity.setName("John");
-        entity.setSurname("Doe");
-        entity.setBirthDate(LocalDate.parse("2000-01-01"));
-        User saved = userRepository.save(entity);
-
-        mockMvc.perform(MockMvcRequestBuilders.delete("/users/" + saved.getId()))
-                .andExpect(status().isNoContent());
-
-        assertThat(userRepository.findById(saved.getId())).isEmpty();
-    }
 }

@@ -60,14 +60,26 @@ class PaymentCardServiceIntegrationTest {
             .withCommand("--save", "", "--appendonly", "no")
             .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(30)));
 
+    @Container
+    static final PostgreSQLContainer<?> authPostgres = new PostgreSQLContainer<>("postgres:15-alpine")
+            .withDatabaseName("auth_testdb")
+            .withUsername("user")
+            .withPassword("password");
+
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.main.jdbc-url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.main.username", postgres::getUsername);
+        registry.add("spring.datasource.main.password", postgres::getPassword);
+        registry.add("spring.datasource.main.hikari.jdbcUrl", postgres::getJdbcUrl);
 
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", redis::getFirstMappedPort);
+
+        registry.add("spring.datasource.auth.jdbc-url", authPostgres::getJdbcUrl);
+        registry.add("spring.datasource.auth.username", authPostgres::getUsername);
+        registry.add("spring.datasource.auth.password", authPostgres::getPassword);
+        registry.add("spring.datasource.auth.hikari.jdbcUrl", authPostgres::getJdbcUrl);
     }
 
     @Autowired
@@ -98,6 +110,7 @@ class PaymentCardServiceIntegrationTest {
 
         // Create a test user
         testUser = new User();
+        testUser.setId(1L);
         testUser.setName("Test User");
         testUser.setEmail("testuser@example.com"); // Add this to satisfy the NOT NULL constraint
         // If surname or other fields are also required, set them here (e.g., testUser.setSurname("Test"));
@@ -185,9 +198,8 @@ class PaymentCardServiceIntegrationTest {
     }
 
     @Test
-    void getCardByIdNotFoundReturnsEmpty() {
-        PaymentCardDto found = paymentCardService.getCardById(999L);
-        assertNull(found);
+    void getCardByIdNotFound() {
+        assertThrows(CardNotFoundException.class, () -> paymentCardService.getCardById(999L));
     }
 
     @Test
