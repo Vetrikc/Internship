@@ -42,4 +42,10 @@ public class Order{
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    public void calculateTotalPrice() {
+        this.totalPrice = orderItems.stream()
+                .map(item -> item.getItem().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 }
