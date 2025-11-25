@@ -15,6 +15,11 @@ services:
       SPRING_DATASOURCE_AUTH_USERNAME: ${SPRING_DATASOURCE_AUTH_USERNAME}
       SPRING_DATASOURCE_AUTH_PASSWORD: ${SPRING_DATASOURCE_AUTH_PASSWORD}
 
+      # Подключение к БД авторизации
+      SPRING_DATASOURCE_ORDER_URL: ${SPRING_DATASOURCE_ORDER_URL}
+      SPRING_DATASOURCE_ORDER_USERNAME: ${SPRING_DATASOURCE_ORDER_USERNAME}
+      SPRING_DATASOURCE_ORDER_PASSWORD: ${SPRING_DATASOURCE_ORDER_PASSWORD}
+
       SPRING_REDIS_HOST: ${SPRING_REDIS_HOST}
     depends_on:
       db:
@@ -54,6 +59,24 @@ services:
       - internship_auth:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_AUTH_USER} -d ${POSTGRES_AUTH_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  order_db:
+    image: postgres:15
+    container_name: postgres_order_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_ORDER_DB}
+      POSTGRES_USER: ${POSTGRES_ORDER_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_ORDER_PASSWORD}
+    ports:
+      - "5435:5432"
+    volumes:
+      - internship_auth:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_ORDER_USER} -d ${POSTGRES_ORDER_DB}" ]
       interval: 5s
       timeout: 5s
       retries: 10

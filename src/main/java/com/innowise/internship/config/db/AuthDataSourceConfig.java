@@ -1,4 +1,4 @@
-package com.innowise.internship.config;
+package com.innowise.internship.config.db;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;

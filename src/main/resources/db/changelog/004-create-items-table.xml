@@ -1,0 +1,22 @@
+<changeSet id="004-create-items-table" author="vllad07">
+    <createTable tableName="items">
+        <column name="id" type="bigint" autoIncrement="true">
+            <constraints primaryKey="true" nullable="false"/>
+        </column>
+        <column name="name" type="varchar(255)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="price" type="decimal(10,2)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="created_at" type="datetime">
+            <constraints nullable="false"/>
+        </column>
+        <column name="updated_at" type="datetime">
+            <constraints nullable="false"/>
+        </column>
+    </createTable>
+    <createIndex indexName="idx_items_name" tableName="items">
+        <column name="name"/>
+    </createIndex>
+</changeSet>
