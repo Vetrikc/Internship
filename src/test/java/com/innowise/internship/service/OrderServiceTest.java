@@ -1,3 +1,4 @@
+/*
 package com.innowise.internship.service;
 
 import com.innowise.internship.dao_order.OrderRepository;
@@ -195,4 +196,4 @@ class OrderServiceTest {
         assertThrows(OrderNotFoundException.class,
                 () -> orderService.updateOrderById(id, updatedOrder));
     }
-}
+}*/

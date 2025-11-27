@@ -36,6 +36,13 @@ public class UserService {
         return userMapper.toDto(savedUser);
     }
 
+    @Transactional
+    public Optional<UserDto> getUserByEmail(String email) {
+        Optional<User> user = userRepository.findByEmail(email);
+        user.orElseThrow(() -> new UserNotFoundException(email));
+        return user.map(userMapper::toDto);
+    }
+
     @Cacheable(value = "users", key = "#id")
     @Transactional()
     public Optional<UserDto> getUserById(Long id) {
