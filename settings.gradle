@@ -1,1 +1,5 @@
 rootProject.name = 'Internship'
+
+include("auth-service")
+include("user-service")
+include("order-service")
