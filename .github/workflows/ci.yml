@@ -69,6 +69,7 @@ jobs:
             -f ${{ matrix.service }}/Dockerfile \
             -t vetrikc/${{ matrix.service }}:${{ github.sha }} \
             -t vetrikc/${{ matrix.service }}:latest \
+            .
 
       # 6. Push в Docker Hub
       - name: Push Docker image
