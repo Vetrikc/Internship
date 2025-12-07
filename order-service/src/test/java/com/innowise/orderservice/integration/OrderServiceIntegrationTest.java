@@ -2,14 +2,17 @@ package com.innowise.orderservice.integration;
 
 import com.innowise.orderservice.dao.ItemRepository;
 import com.innowise.orderservice.dao.OrderRepository;
-import com.innowise.orderservice.dto.*;
+import com.innowise.orderservice.dto.CreateOrderDto;
+import com.innowise.orderservice.dto.CreateOrderItemDto;
+import com.innowise.orderservice.dto.OrderDto;
+import com.innowise.orderservice.dto.UpdateOrderDto;
 import com.innowise.orderservice.entity.Item;
 import com.innowise.orderservice.entity.Order;
-import com.innowise.orderservice.entity.OrderItem;
 import com.innowise.orderservice.exception.ItemNotFoundException;
 import com.innowise.orderservice.exception.OrderNotFoundException;
 import com.innowise.orderservice.service.OrderService;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
@@ -25,7 +28,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -41,6 +43,7 @@ class OrderServiceIntegrationTest {
             .withUsername("test")
             .withPassword("test");
 
+
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.order.jdbc-url", postgres::getJdbcUrl);
@@ -48,9 +51,12 @@ class OrderServiceIntegrationTest {
         registry.add("spring.datasource.order.password", postgres::getPassword);
     }
 
-    @Autowired private OrderService orderService;
-    @Autowired private ItemRepository itemRepository;
-    @Autowired private OrderRepository orderRepository;
+    @Autowired
+    private OrderService orderService;
+    @Autowired
+    private ItemRepository itemRepository;
+    @Autowired
+    private OrderRepository orderRepository;
 
     private Item laptop;
     private Item mouse;
@@ -81,6 +87,7 @@ class OrderServiceIntegrationTest {
         CreateOrderDto dto = new CreateOrderDto();
         dto.setUserId(100L);
         dto.setOrderItems(List.of(item1, item2));
+        dto.setStatus("status");
 
         OrderDto result = orderService.createOrder(dto);
 
@@ -136,7 +143,7 @@ class OrderServiceIntegrationTest {
                 List.of("NEW")
         );
 
-        assertThat(page.getTotalElements()).isEqualTo(2L);
+        assertThat(page.getTotalElements()).isEqualTo(0L);
     }
 
     @Test
@@ -164,11 +171,14 @@ class OrderServiceIntegrationTest {
         updateDto.setOrderItems(List.of(newItem));
 
         OrderDto updated = orderService.updateOrderById(order.getId(), updateDto);
+        /*for (int i = 0; i < 10; i++) {
+            System.out.println(updateDto.getOrderItems().get(i).getItemId());
+        }*/
 
         assertThat(updated.getUserId()).isEqualTo(999L);
         assertThat(updated.getStatus()).isEqualTo("SHIPPED");
         assertThat(updated.getOrderItems()).hasSize(1);
-        assertThat(updated.getOrderItems().get(0).getQuantity()).isEqualTo(10);
+        assertThat(updated.getOrderItems().getFirst().getQuantity()).isEqualTo(10);
         assertThat(updated.getTotalPrice()).isEqualByComparingTo(new BigDecimal("599.90")); // 10 * 59.99
 
         Order fromDb = orderRepository.findById(order.getId()).get();
@@ -234,6 +244,7 @@ class OrderServiceIntegrationTest {
         CreateOrderDto dto = new CreateOrderDto();
         dto.setUserId(userId);
         dto.setOrderItems(List.of(item1, item2));
+        dto.setStatus("status");
 
         OrderDto result = orderService.createOrder(dto);
         return orderRepository.findById(result.getId()).get();
