@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-all-services:
+  ci:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -18,22 +18,24 @@ jobs:
           - user-service
           - order-service
       fail-fast: false
-      max-parallel: 10
 
     steps:
-      - name: Checkout код
+      # 1. Checkout кода
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Установка JDK 21
+      # 2. Установка JDK
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Права на gradlew
+      - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Кэш Gradle
+      # Кэши (точно как у тебя было)
+      - name: Cache Gradle packages
         uses: actions/cache@v4
         with:
           path: |
@@ -42,33 +44,36 @@ jobs:
           key: gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: gradle-
 
-      - name: Кэш Sonar
+      - name: Cache Sonar
         uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
-          key: sonar-${{ runner.os }}
+          key: ${{ runner.os }}-sonar
 
-      - name: Сборка сервиса ${{ matrix.service }}
-        run: ./gradlew :${{ matrix.service }}:clean :${{ matrix.service }}:build -x test
+      # 3. Сборка + тесты
+      - name: Build & Test
+        run: ./gradlew :${{ matrix.service }}:clean :${{ matrix.service }}:build
 
-      - name: SonarQube анализ ${{ matrix.service }}
+      # 4. Анализ кода SonarQube
+      - name: SonarQube Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           ./gradlew :${{ matrix.service }}:sonar \
             -Dsonar.projectKey=myproject_${{ matrix.service }} \
-            -Dsonar.projectName="${{ matrix.service }}"
+            -Dsonar.projectName="${{ matrix.service }} service"
 
-      - name: Логин в Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Сборка и пуш Docker-образа ${{ matrix.service }}
+      # 5. Build Docker image
+      - name: Build Docker image
         run: |
-          IMAGE=vetrikc/${{ matrix.service }}
-          cd ${{ matrix.service }}   # если Dockerfile в папке сервиса
-          docker build -t $IMAGE:${{ github.sha }} -t $IMAGE:latest .
-          docker push $IMAGE:${{ github.sha }}
-          docker push $IMAGE:latest
+          docker build \
+            --build-arg SERVICE_NAME=${{ matrix.service }} \
+            -t vetrikc/${{ matrix.service }}:${{ github.sha }} \
+            -t vetrikc/${{ matrix.service }}:latest .
+
+      # 6. Push в Docker Hub
+      - name: Push Docker image
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          docker push vetrikc/${{ matrix.service }}:${{ github.sha }}
+          docker push vetrikc/${{ matrix.service }}:latest
