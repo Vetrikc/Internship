@@ -66,9 +66,10 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            --build-arg MODULE_NAME=${{ matrix.service }} \
+            -f ${{ matrix.service }}/Dockerfile \
             -t vetrikc/${{ matrix.service }}:${{ github.sha }} \
-            -t vetrikc/${{ matrix.service }}:latest .
+            -t vetrikc/${{ matrix.service }}:latest \
+            .
 
       # 6. Push в Docker Hub
       - name: Push Docker image
