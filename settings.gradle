@@ -1,1 +1,5 @@
-rootProject.name = 'Internship'
+rootProject.name = "internship"
+
+include("user-service")
+include("auth-service")
+include("order-service")
