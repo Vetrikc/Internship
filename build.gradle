@@ -67,13 +67,13 @@ subprojects {
 
         //tests
         runtimeOnly 'org.postgresql:postgresql'
-/*         testImplementation "org.testcontainers:testcontainers:1.20.3"
+        testImplementation "org.testcontainers:testcontainers:1.20.3"
         testImplementation "org.testcontainers:junit-jupiter:1.20.3"
         testImplementation "org.testcontainers:postgresql:1.20.3"
         testImplementation 'com.redis.testcontainers:testcontainers-redis:1.6.4'
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-        testImplementation 'org.springframework.security:spring-security-test'*/
+        testImplementation 'org.springframework.security:spring-security-test'
 
         implementation "org.springframework.cloud:spring-cloud-starter-openfeign"
 

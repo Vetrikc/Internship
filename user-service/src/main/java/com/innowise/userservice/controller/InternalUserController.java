@@ -28,8 +28,8 @@ public class InternalUserController {
         dto.setSurname(request.getSurname());
         dto.setBirthDate(request.getBirthDate());
 
-        userService.createUser(dto);
-        return new ResponseEntity<>(dto, HttpStatus.OK);
+        UserDto createdUserDto = userService.createUser(dto);
+        return new ResponseEntity<>(createdUserDto, HttpStatus.OK);
     }
     @GetMapping("/by-email/{email}")
     public UserDto getUserByEmail(@PathVariable String email) {
