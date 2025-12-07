@@ -17,7 +17,6 @@ jobs:
           - auth-service
           - user-service
           - order-service
-          # сюда просто добавляй новые сервисы — и всё
       fail-fast: false
       max-parallel: 10
 
