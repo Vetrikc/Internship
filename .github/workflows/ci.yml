@@ -34,7 +34,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # Кэши (точно как у тебя было)
+      # Кэши
       - name: Cache Gradle packages
         uses: actions/cache@v4
         with:
