@@ -139,6 +139,7 @@ public class OrderService {
                 order.getOrderItems().add(orderItem);
             }
         }
+        order.calculateTotalPrice();
         orderRepository.saveAndFlush(order);
 
         Order fullOrder = orderRepository.findById(id)
