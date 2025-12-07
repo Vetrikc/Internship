@@ -16,7 +16,6 @@ jobs:
         service:
           - auth-service
           - user-service
-          - order-service
       fail-fast: false
 
     steps:
@@ -67,7 +66,7 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            --build-arg SERVICE_NAME=${{ matrix.service }} \
+            --build-arg MODULE_NAME=${{ matrix.service }} \
             -t vetrikc/${{ matrix.service }}:${{ github.sha }} \
             -t vetrikc/${{ matrix.service }}:latest .
 
