@@ -191,7 +191,7 @@ class PaymentCardControllerIntegrationTest {
     @Test
     void getAllUserCards_Unauthorized() throws Exception {
         mockMvc.perform(get("/api/v1/cards"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 
 

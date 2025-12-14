@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,8 +25,7 @@ public class UserController {
     }
 
     @PutMapping()
-    public ResponseEntity<UserDto> updateUser(@Valid @RequestBody UserDto userDto, Authentication authentication) {
-        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+    public ResponseEntity<UserDto> updateUser(@Valid @RequestBody UserDto userDto, @AuthenticationPrincipal JwtPrincipal principal) {
         Long userId = principal.id();
 
         UserDto updatedUser = userService.updateUser(userId, userDto);
@@ -33,8 +33,7 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUserInfo(Authentication authentication){
-        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+    public ResponseEntity<?> getCurrentUserInfo( @AuthenticationPrincipal JwtPrincipal principal){
         Long userId = principal.id();
 
         return new ResponseEntity<>(userService.getUserById(userId), HttpStatus.OK);

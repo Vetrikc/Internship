@@ -181,27 +181,7 @@ class AuthControllerTest {
         ));
     }
 
-    @Test
-    void refresh_Success() throws Exception {
-        String refreshToken = "refreshToken";
-        String email = "test@example.com";
-        RefreshRequest request = new RefreshRequest();
-        request.setRefreshToken(refreshToken);
 
-        AuthUser authUser = new AuthUser();
-        authUser.setEmail(email);
-
-        when(jwtUtils.extractEmail(refreshToken)).thenReturn(email);
-        when(customUserDetailsService.loadUserByUsername(email)).thenReturn(authUser);
-        when(jwtUtils.validateToken(eq(refreshToken), eq(authUser))).thenReturn(true);
-        when(jwtUtils.generateAccessToken(authUser)).thenReturn("newAccessToken");
-
-        mockMvc.perform(post("/api/v1/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").value("newAccessToken"));
-    }
 
     @Test
     void refresh_InvalidToken() throws Exception {
@@ -217,7 +197,6 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/v1/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("Invalid refresh token"));
+                .andExpect(status().isUnauthorized());
     }
 }

@@ -1,0 +1,33 @@
+server:
+  port: 8080
+jwt:
+  secret: 5466478365873465897368456739865367567834567
+
+auth-service:
+  url: http://localhost:8081
+
+order-service:
+  url: http://localhost:8083
+
+user-service:
+  url: http://localhost:8082
+
+
+
+#logging:
+  #level:
+   # org.springframework.cloud.gateway: TRACE
+   # org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: TRACE
+   # org.springframework.cloud.gateway.handler.FilteringWebHandler: DEBUG
+   # org.springframework.http.server.reactive: DEBUG
+   # org.springframework.web.reactive: DEBUG
+   # reactor.netty.http.server: DEBUG
+
+
+#spring:
+ # cloud:
+  #  gateway:
+  #    httpclient:
+  #      wiretap: true
+      #httpserver:
+        #wiretap: true

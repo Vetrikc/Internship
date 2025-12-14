@@ -1,5 +1,4 @@
-// src/main/java/com/innowise/userservice/security/JwtUtils.java
-package com.innowise.orderservice.security;
+package com.innowise.apigeteway.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -11,7 +10,7 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 
 @Component
-public class JwtUtils {
+public class JwtUtil {
 
     @Value("${jwt.secret}")
     private String secret;
@@ -20,7 +19,7 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    private Claims extractClaims(String token) {
+    public Claims extractClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
@@ -33,11 +32,7 @@ public class JwtUtils {
     }
 
     public Long extractUserId(String token) {
-        Object value = extractClaims(token).get("userId");
-        if (value instanceof Long l) return l;
-        if (value instanceof Integer i) return i.longValue();
-        if (value instanceof String s) return Long.parseLong(s);
-        throw new IllegalArgumentException("Invalid userId type in token");
+        return Long.parseLong((String) extractClaims(token).get("userId"));  // Поскольку в generate это String
     }
 
     public String extractRole(String token) {
@@ -46,5 +41,14 @@ public class JwtUtils {
 
     public boolean isTokenExpired(String token) {
         return extractClaims(token).getExpiration().before(new Date());
+    }
+
+    public boolean isInvalid(String token) {
+        try {
+            extractClaims(token);
+            return isTokenExpired(token);
+        } catch (Exception e) {
+            return true;
+        }
     }
 }
