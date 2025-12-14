@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,14 +29,13 @@ public class UserOrderController {
     }
 
     @PostMapping
-    public ResponseEntity<OrderWithUserDto> createOrder(@Valid @RequestBody CreateOrderDto dto, Authentication authentication) {
-        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+    public ResponseEntity<OrderWithUserDto> createOrder(@Valid @RequestBody CreateOrderDto dto, @AuthenticationPrincipal JwtPrincipal principal) {
         Long userId = principal.id();
 
         dto.setUserId(userId);
 
         OrderDto created = orderService.createOrder(dto);
-        UserDto userDto = userServiceClient.getUserByEmail(authentication.getName());
+        UserDto userDto = userServiceClient.getUserByEmail(principal.getName());
         OrderWithUserDto orderWithUserDto = new OrderWithUserDto();
         orderWithUserDto.setOrder(created);
         orderWithUserDto.setUser(userDto);
@@ -43,14 +43,11 @@ public class UserOrderController {
     }
 
     @GetMapping
-    public ResponseEntity<OrdersWithUserDto> getMyOrders(Authentication authentication) {
-        System.out.println(authentication.getName());
-
-        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+    public ResponseEntity<OrdersWithUserDto> getMyOrders(@AuthenticationPrincipal JwtPrincipal principal) {
         Long userId = principal.id();
 
         List<OrderDto> orders = orderService.getOrdersByUserId(userId);
-        UserDto userDto = userServiceClient.getUserByEmail(authentication.getName());
+        UserDto userDto = userServiceClient.getUserByEmail(principal.getName());
         OrdersWithUserDto ordersWithUserDto = new OrdersWithUserDto();
         ordersWithUserDto.setUser(userDto);
         ordersWithUserDto.setOrder(orders);
@@ -59,15 +56,14 @@ public class UserOrderController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<OrderWithUserDto> getMyOrderById(@PathVariable Long id, Authentication authentication) {
-        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+    public ResponseEntity<OrderWithUserDto> getMyOrderById(@PathVariable Long id, @AuthenticationPrincipal JwtPrincipal principal) {
         Long userId = principal.id();
 
         OrderDto order = orderService.getOrderById(id);
         if (!order.getUserId().equals(userId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        UserDto userDto = userServiceClient.getUserByEmail(authentication.getName());
+        UserDto userDto = userServiceClient.getUserByEmail(principal.getName());
         OrderWithUserDto orderWithUserDto = new OrderWithUserDto();
         orderWithUserDto.setOrder(order);
         orderWithUserDto.setUser(userDto);
@@ -77,8 +73,7 @@ public class UserOrderController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<OrderWithUserDto> updateMyOrder(@PathVariable Long id, @Valid @RequestBody UpdateOrderDto dto, Authentication authentication) {
-        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+    public ResponseEntity<OrderWithUserDto> updateMyOrder(@PathVariable Long id, @Valid @RequestBody UpdateOrderDto dto, @AuthenticationPrincipal JwtPrincipal principal) {
         Long userId = principal.id();
 
         OrderDto existing = orderService.getOrderById(id);
@@ -87,7 +82,7 @@ public class UserOrderController {
         }
 
         OrderDto updated = orderService.updateOrderById(id, dto);
-        UserDto userDto = userServiceClient.getUserByEmail(authentication.getName());
+        UserDto userDto = userServiceClient.getUserByEmail(principal.getName());
         OrderWithUserDto orderWithUserDto = new OrderWithUserDto();
         orderWithUserDto.setOrder(updated);
         orderWithUserDto.setUser(userDto);
@@ -97,8 +92,7 @@ public class UserOrderController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteMyOrder(@PathVariable Long id, Authentication authentication) {
-        JwtPrincipal principal = (JwtPrincipal) authentication.getPrincipal();
+    public ResponseEntity<Void> deleteMyOrder(@PathVariable Long id, @AuthenticationPrincipal JwtPrincipal principal) {
         Long userId = principal.id();
 
         OrderDto existing = orderService.getOrderById(id);

@@ -6,6 +6,8 @@ import com.innowise.authservice.entity.Role;
 import com.innowise.authservice.security.JwtUtils;
 import com.innowise.authservice.service.CustomUserDetailsService;
 import feign.FeignException;
+import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +25,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/auth")
 @EnableFeignClients
+@Log4j2
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -83,10 +86,13 @@ public class AuthController {
         profileRequest.setBirthDate(request.getBirthDate());
 
         try {
+            log.info("Trying to call user-service at http://localhost:8082/api/v1/internal/users");
             userServiceClient.createUserProfile(profileRequest);
+            log.info("User profile created successfully");
         } catch (FeignException e) {
             // Откатываем AuthUser, если user-service упал
             customUserDetailsService.deleteAuthUser(authUser.getId());
+            log.error("Failed to call user-service: {} – {}", e.status(), e.getMessage());
             return ResponseEntity.status(502)
                     .body(Map.of("error", "Service temporarily unavailable"));
         }
