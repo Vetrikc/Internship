@@ -124,7 +124,7 @@ class UserControllerIntegrationTest {
     @Test
     void getCurrentUserInfo_Unauthorized() throws Exception {
         mockMvc.perform(get("/api/v1/users/me"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 
     @Test

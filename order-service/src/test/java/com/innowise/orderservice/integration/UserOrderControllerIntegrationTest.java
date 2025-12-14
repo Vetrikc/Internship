@@ -240,6 +240,6 @@ class UserOrderControllerIntegrationTest {
     @Test
     void unauthorizedAccess() throws Exception {
         mockMvc.perform(get("/api/v1/orders"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 }

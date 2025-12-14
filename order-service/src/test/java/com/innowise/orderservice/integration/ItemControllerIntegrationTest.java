@@ -148,6 +148,6 @@ class ItemControllerIntegrationTest {
     @Test
     void unauthorizedAccess() throws Exception {
         mockMvc.perform(get("/api/v1/items"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 }
