@@ -1,0 +1,16 @@
+<changeSet id="001-create-payment-table" author="vllad07">
+    <createTable tableName="payments">
+        <column name="id" type="bigint" autoIncrement="true">
+            <constraints primaryKey="true" nullable="false"/>
+        </column>
+        <column name="order_id" type="bigint">
+            <constraints nullable="false"/>
+        </column>
+        <column name="user_id" type="bigint">
+            <constraints nullable="false"/>
+        </column>
+        <column name="status" type="varchar(256)"/>
+        <column name="timestamp" type="timestamp"/>
+        <column name="payment_amount" type="numeric(19,4)"/>
+    </createTable>
+</changeSet>

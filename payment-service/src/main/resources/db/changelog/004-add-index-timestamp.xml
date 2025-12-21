@@ -1,0 +1,5 @@
+<changeSet id="004-add-index-timestamp" author="vllad07">
+    <createIndex tableName="payments" indexName="idx_timestamp">
+        <column name="timestamp" descending="true"/>
+    </createIndex>
+</changeSet>

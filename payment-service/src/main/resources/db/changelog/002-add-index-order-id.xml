@@ -1,0 +1,7 @@
+<changeSet id="002-add-index-order-id" author="vllad07">
+    <createIndex tableName="payments" indexName="idx_order_id" unique="true">
+        <column name="order_id"/>
+    </createIndex>
+</changeSet>
+
+

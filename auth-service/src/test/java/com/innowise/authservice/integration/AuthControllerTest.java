@@ -97,7 +97,6 @@ class AuthControllerTest {
     @MockBean
     private UserServiceClient userServiceClient;
 
-
     @Autowired
     private ObjectMapper objectMapper;
 
