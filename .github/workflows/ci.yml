@@ -17,6 +17,7 @@ jobs:
           - auth-service
           - user-service
           - order-service
+          - payment-service
       fail-fast: false
 
     steps:
