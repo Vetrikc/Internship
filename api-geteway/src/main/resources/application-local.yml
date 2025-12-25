@@ -12,6 +12,8 @@ order-service:
 user-service:
   url: http://localhost:8082
 
+payment-service:
+  url: http://localhost:8084
 
 
 #logging:

@@ -17,32 +17,32 @@ import javax.sql.DataSource;
 @Configuration
 @EnableJpaRepositories(
         basePackages = "com.innowise.paymentservice.dao",
-        entityManagerFactoryRef = "orderEntityManagerFactory",
-        transactionManagerRef = "orderTransactionManager"
+        entityManagerFactoryRef = "paymentEntityManagerFactory",
+        transactionManagerRef = "paymentTransactionManager"
 )
 @EnableTransactionManagement
 public class PaymentDataSourceConfig {
 
     @Bean
     @ConfigurationProperties("spring.datasource.payment")
-    public DataSource orderDataSource() {
+    public DataSource paymentDataSource() {
         return DataSourceBuilder.create().build();
     }
 
     @Bean
-    public LocalContainerEntityManagerFactoryBean orderEntityManagerFactory(
+    public LocalContainerEntityManagerFactoryBean paymentEntityManagerFactory(
             EntityManagerFactoryBuilder builder) {
         return builder
-                .dataSource(orderDataSource())
+                .dataSource(paymentDataSource())
                 .packages("com.innowise.paymentservice.entity")
                 .persistenceUnit("payment")
                 .build();
     }
 
     @Bean
-    public PlatformTransactionManager orderTransactionManager(
+    public PlatformTransactionManager paymentTransactionManager(
             EntityManagerFactoryBuilder builder) {
-        return new JpaTransactionManager(orderEntityManagerFactory(builder).getObject());
+        return new JpaTransactionManager(paymentEntityManagerFactory(builder).getObject());
     }
 
 }
