@@ -13,6 +13,9 @@ user-service:
 order-service:
   url: http://order-service:8083
 
+payment-service:
+  url: http://payment-service:8084
+
 logging:
   level:
     org.springframework.cloud.gateway: TRACE

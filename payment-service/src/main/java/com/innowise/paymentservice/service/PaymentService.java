@@ -3,9 +3,11 @@ package com.innowise.paymentservice.service;
 import com.innowise.paymentservice.dao.PaymentRepository;
 import com.innowise.paymentservice.dto.PaymentDTO;
 import com.innowise.paymentservice.entity.Payment;
+import com.innowise.paymentservice.event.PaymentEvent;
 import com.innowise.paymentservice.mapper.PaymentMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -28,6 +30,11 @@ public class PaymentService {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private KafkaTemplate<String, PaymentEvent> kafkaTemplate;
+
+    private static final String PAYMENT_TOPIC = "payments";
+
     public PaymentDTO createPayment(PaymentDTO dto) {
         Payment entity = paymentMapper.toEntity(dto);
 
@@ -41,6 +48,13 @@ public class PaymentService {
         entity.setTimestamp(new Date());
 
         Payment saved = paymentRepository.save(entity);
+
+        // Отправка события в Kafka
+        PaymentEvent event = new PaymentEvent();
+        event.setOrderId(entity.getOrderId());
+        event.setStatus(status);
+        kafkaTemplate.send(PAYMENT_TOPIC, event);  // Отправляем событие
+
         return paymentMapper.toDto(saved);
     }
 

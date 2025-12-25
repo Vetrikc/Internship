@@ -17,6 +17,9 @@ class GatewayConfig {
     @Value("${auth-service.url}")
     String authUrl;
 
+    @Value("${payment-service.url}")
+    String paymentUrl;
+
 
     @Bean
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder, AuthenticationFilter authenticationFilter) {
@@ -27,9 +30,12 @@ class GatewayConfig {
                 .route("user-service", r -> r.path("/api/v1/users/**", "/api/v1/cards/**")
                         .filters(f -> f.filter(authenticationFilter))
                         .uri(userUrl))
-                .route("order-service", r -> r.path("/api/v1/orders/**")
+                .route("order-service", r -> r.path("/api/v1/orders/**","/api/v1/items/**")
                         .filters(f -> f.filter(authenticationFilter))
                         .uri(orderUrl))
+                .route("payment-service", r -> r.path("/api/v1/payments/**")
+                        .filters(f -> f.filter(authenticationFilter))
+                        .uri(paymentUrl))
                 .build();
     }
 }

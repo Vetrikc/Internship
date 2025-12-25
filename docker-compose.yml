@@ -63,10 +63,52 @@ services:
       - SPRING_DATASOURCE_ORDER_USERNAME=${POSTGRES_ORDER_USER}
       - SPRING_DATASOURCE_ORDER_PASSWORD=${POSTGRES_ORDER_PASSWORD}
       - SPRING_REDIS_HOST=redis
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     depends_on:
       order_db:
         condition: service_healthy
+      kafka:
+        condition: service_started
     restart: unless-stopped
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: payment-service/Dockerfile
+    container_name: payment-service
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_PAYMENT_URL=jdbc:postgresql://payment_db:5432/${POSTGRES_PAYMENT_DB}
+      - SPRING_DATASOURCE_PAYMENT_USERNAME=${POSTGRES_PAYMENT_USER}
+      - SPRING_DATASOURCE_PAYMENT_PASSWORD=${POSTGRES_PAYMENT_PASSWORD}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      payment_db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    restart: unless-stopped
+
+  payment_db:
+    image: postgres:15
+    container_name: postgres_payment_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_PAYMENT_DB}
+      POSTGRES_USER: ${POSTGRES_PAYMENT_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PAYMENT_PASSWORD}
+    ports:
+      - "5436:5432"
+    volumes:
+      - internship_payment:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_PAYMENT_USER} -d ${POSTGRES_PAYMENT_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
 
   db:
     image: postgres:15
@@ -136,9 +178,43 @@ services:
       timeout: 3s
       retries: 5
 
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.1
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    healthcheck:
+      test: [ "CMD", "echo", "ruok", "|", "nc", "-w", "1", "localhost", "2181", "|", "grep", "imok" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.0.1
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+
+
 volumes:
   internship_user:
   internship_auth:
   internship_order:
   redis_data:
+  internship_payment:
 

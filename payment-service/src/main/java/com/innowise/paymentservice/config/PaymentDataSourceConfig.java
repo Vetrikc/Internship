@@ -17,8 +17,8 @@ import javax.sql.DataSource;
 @Configuration
 @EnableJpaRepositories(
         basePackages = "com.innowise.paymentservice.dao",
-        entityManagerFactoryRef = "orderEntityManagerFactory",
-        transactionManagerRef = "orderTransactionManager"
+        entityManagerFactoryRef = "paymentEntityManagerFactory",
+        transactionManagerRef = "paymentTransactionManager"
 )
 @EnableTransactionManagement
 public class PaymentDataSourceConfig {

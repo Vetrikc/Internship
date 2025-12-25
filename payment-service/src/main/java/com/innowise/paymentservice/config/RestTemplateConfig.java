@@ -1,4 +1,3 @@
-// Add to your configuration class or a new one
 package com.innowise.paymentservice.config;
 
 import org.springframework.context.annotation.Bean;
