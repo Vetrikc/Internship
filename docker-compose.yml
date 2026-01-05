@@ -1,5 +1,5 @@
 services:
-  api-geteway:
+  api-gateway:
     build:
       context: .
       dockerfile: api-geteway/Dockerfile
