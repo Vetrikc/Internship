@@ -3,18 +3,18 @@ server:
 jwt:
   secret: 5466478365873465897368456739865367567834567
 
-
 auth-service:
-  url: http://auth-service:8081
+  url: ${AUTH_SERVICE_URL:http://auth-service:8081}
 
 user-service:
-  url: http://user-service:8082
+  url: ${USER_SERVICE_URL:http://user-service:8082}
 
 order-service:
-  url: http://order-service:8083
+  url: ${ORDER_SERVICE_URL:http://order-service:8083}
 
 payment-service:
-  url: http://payment-service:8084
+  url: ${PAYMENT_SERVICE_URL:http://payment-service:8084}
+
 
 logging:
   level:

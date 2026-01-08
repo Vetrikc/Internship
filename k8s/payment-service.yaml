@@ -24,7 +24,7 @@ spec:
             - name: SPRING_DATASOURCE_PAYMENT_URL
               value: jdbc:postgresql://postgres-payment:5432/paymentdb
             - name: SPRING_DATASOURCE_PAYMENT_USERNAME
-              value: payment
+              value: user
             - name: SPRING_DATASOURCE_PAYMENT_PASSWORD
               value: password
             - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
@@ -39,3 +39,4 @@ spec:
     app: payment-service
   ports:
     - port: 8084
+      targetPort: 8084

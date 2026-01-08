@@ -86,7 +86,7 @@ public class AuthController {
         profileRequest.setBirthDate(request.getBirthDate());
 
         try {
-            log.info("Trying to call user-service at http://localhost:8082/api/v1/internal/users");
+            log.info("Trying to call user-service at http://user-service:8082/api/v1/internal/users");
             userServiceClient.createUserProfile(profileRequest);
             log.info("User profile created successfully");
         } catch (FeignException e) {

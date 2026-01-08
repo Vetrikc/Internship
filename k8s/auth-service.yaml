@@ -24,11 +24,13 @@ spec:
             - name: SPRING_DATASOURCE_AUTH_URL
               value: jdbc:postgresql://postgres-auth:5432/authdb
             - name: SPRING_DATASOURCE_AUTH_USERNAME
-              value: auth
+              value: user
             - name: SPRING_DATASOURCE_AUTH_PASSWORD
               value: password
             - name: SPRING_REDIS_HOST
               value: redis
+            - name: USER_SERVICE_URL
+              value: http://user-service:8082
 ---
 apiVersion: v1
 kind: Service
@@ -39,3 +41,4 @@ spec:
     app: auth-service
   ports:
     - port: 8081
+      targetPort: 8081

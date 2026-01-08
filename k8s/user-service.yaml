@@ -12,6 +12,20 @@ spec:
       labels:
         app: user-service
     spec:
+      # InitContainer ждёт, пока Redis станет доступен
+      initContainers:
+        - name: wait-for-redis
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Redis to be ready..."
+              until nc -z redis 6379; do
+                echo "Redis not ready, sleeping 2s..."
+                sleep 2
+              done
+              echo "Redis is ready!"
       containers:
         - name: user-service
           image: user-service:latest
@@ -29,6 +43,9 @@ spec:
               value: password
             - name: SPRING_REDIS_HOST
               value: redis
+            - name: SPRING_REDIS_PORT
+              value: "6379"
+          restartPolicy: Always
 ---
 apiVersion: v1
 kind: Service
@@ -39,3 +56,4 @@ spec:
     app: user-service
   ports:
     - port: 8082
+      targetPort: 8082
