@@ -53,13 +53,24 @@ spec:
             - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
               value: "true"
 
+          livenessProbe:
+            tcpSocket:
+              port: 9092
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 9092
+            initialDelaySeconds: 45
+            periodSeconds: 5
+
           volumeMounts:
-            - name: kafka-data
+            - name: kafka-data-new
               mountPath: /var/lib/kafka/data
 
   volumeClaimTemplates:
     - metadata:
-        name: kafka-data
+        name: kafka-data-new
       spec:
         accessModes: ["ReadWriteOnce"]
         resources:
