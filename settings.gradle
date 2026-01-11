@@ -1,6 +1,6 @@
 rootProject.name = "internship"
 
-include("api-geteway")
+include("api-gateway")
 include("user-service")
 include("auth-service")
 include("order-service")

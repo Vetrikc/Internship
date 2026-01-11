@@ -12,12 +12,12 @@ RUN ./gradlew build -x test --no-daemon || true
 
 COPY . .
 
-ARG MODULE_NAME=api-geteway
+ARG MODULE_NAME=api-gateway
 RUN ./gradlew :${MODULE_NAME}:bootJar -x test --no-daemon
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-ARG MODULE_NAME=api-geteway
+ARG MODULE_NAME=api-gateway
 COPY --from=build /app/${MODULE_NAME}/build/libs/*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
