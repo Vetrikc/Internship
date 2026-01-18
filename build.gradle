@@ -50,13 +50,6 @@ subprojects {
         implementation 'org.mapstruct:mapstruct:1.6.3'
         annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 
-        // Redis
-        //testImplementation "com.redis.testcontainers:testcontainers-redis-junit-jupiter:1.6.4"
-
-
-        // JWT — правильное разделение
-
-
         // OpenAPI / Swagger
         implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13'
 
@@ -75,6 +68,14 @@ subprojects {
 
         implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
+        // Source: https://mvnrepository.com/artifact/io.micrometer/micrometer-registry-prometheus
+        implementation 'io.micrometer:micrometer-registry-prometheus:1.16.2'
+        // Source: https://mvnrepository.com/artifact/io.micrometer/micrometer-tracing-bridge-otel
+        implementation 'io.micrometer:micrometer-tracing-bridge-otel:1.6.1'
+        // Source: https://mvnrepository.com/artifact/io.opentelemetry/opentelemetry-exporter-otlp
+        implementation 'io.opentelemetry:opentelemetry-exporter-otlp:1.55.0'
+        // Source: https://mvnrepository.com/artifact/com.github.loki4j/loki-logback-appender
+        implementation 'com.github.loki4j:loki-logback-appender:2.0.0'
     }
 
     test {

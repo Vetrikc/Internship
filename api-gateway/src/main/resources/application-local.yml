@@ -15,6 +15,17 @@ user-service:
 payment-service:
   url: http://localhost:8084
 
+management:
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+
+otel:
+  exporter:
+    otlp:
+      endpoint: http://tempo:4317
+
 
 #logging:
   #level:

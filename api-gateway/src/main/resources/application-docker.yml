@@ -48,5 +48,15 @@ management:
       enabled: true
     readinessstate:
       enabled: true
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+
+otel:
+  exporter:
+    otlp:
+      endpoint: http://tempo:4317
+
 
 
