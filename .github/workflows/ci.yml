@@ -22,6 +22,7 @@ jobs:
           - user-service
           - order-service
           - payment-service
+          - api-gateway
       fail-fast: false
 
     steps:
@@ -67,6 +68,7 @@ jobs:
 
       # 4. Анализ кода SonarQube
       - name: SonarQube Scan
+        if: ${{ secrets.SONAR_TOKEN != '' }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
@@ -85,6 +87,7 @@ jobs:
 
       # 6. Push в Docker Hub
       - name: Push Docker image
+        if: ${{ secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PASSWORD != '' }}
         run: |
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
           docker push vetrikc/${{ matrix.service }}:${{ github.sha }}
