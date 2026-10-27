@@ -1,0 +1,5 @@
+<changeSet id="003-add-index-user-id" author="vllad07">
+    <createIndex tableName="payments" indexName="idx_user_id">
+        <column name="user_id"/>
+    </createIndex>
+</changeSet>

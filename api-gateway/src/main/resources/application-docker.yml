@@ -1,0 +1,62 @@
+server:
+  port: 8080
+jwt:
+  secret: 5466478365873465897368456739865367567834567
+
+auth-service:
+  url: ${AUTH_SERVICE_URL:http://auth-service:8081}
+
+user-service:
+  url: ${USER_SERVICE_URL:http://user-service:8082}
+
+order-service:
+  url: ${ORDER_SERVICE_URL:http://order-service:8083}
+
+payment-service:
+  url: ${PAYMENT_SERVICE_URL:http://payment-service:8084}
+
+
+logging:
+  level:
+    org.springframework.cloud.gateway: TRACE
+    org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: TRACE
+    org.springframework.cloud.gateway.handler.FilteringWebHandler: DEBUG
+    org.springframework.http.server.reactive: DEBUG
+    org.springframework.web.reactive: DEBUG
+    reactor.netty.http.server: DEBUG
+
+
+spring:
+  cloud:
+    gateway:
+      httpclient:
+        wiretap: true
+      httpserver:
+        wiretap: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+
+otel:
+  exporter:
+    otlp:
+      endpoint: http://tempo:4317
+
+
+

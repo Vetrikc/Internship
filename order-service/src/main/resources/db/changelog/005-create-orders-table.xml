@@ -1,0 +1,25 @@
+<changeSet id="005-create-orders-table" author="vllad07">
+    <createTable tableName="orders">
+        <column name="id" type="bigint" autoIncrement="true">
+            <constraints primaryKey="true" nullable="false"/>
+        </column>
+        <column name="user_id" type="bigint">
+            <constraints nullable="false"/>
+        </column>
+        <column name="status" type="varchar(255)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="total_price" type="decimal(10,2)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="deleted" type="boolean" defaultValueBoolean="false">
+            <constraints nullable="false"/>
+        </column>
+        <column name="created_at" type="datetime">
+            <constraints nullable="false"/>
+        </column>
+        <column name="updated_at" type="datetime">
+            <constraints nullable="false"/>
+        </column>
+    </createTable>
+</changeSet>

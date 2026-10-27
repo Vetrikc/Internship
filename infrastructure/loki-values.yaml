@@ -1,0 +1,11 @@
+loki:
+  singleBinary:
+    enabled: true
+  persistence:
+    enabled: false
+
+grafana:
+  enabled: false
+
+promtail:
+  enabled: false
