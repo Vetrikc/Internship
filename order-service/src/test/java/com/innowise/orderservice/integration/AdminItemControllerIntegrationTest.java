@@ -16,12 +16,8 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import java.math.BigDecimal;
 
@@ -42,26 +38,15 @@ class AdminItemControllerIntegrationTest {
             .withUsername("user")
             .withPassword("password");
 
-    @Container
-    static final KafkaContainer kafka = new KafkaContainer(
-            DockerImageName.parse("confluentinc/cp-kafka:7.3.0")
-                    .asCompatibleSubstituteFor("apache/kafka")
-    );
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         postgres.start();
-        kafka.start();
         registry.add("spring.datasource.order.jdbc-url", postgres::getJdbcUrl);
         registry.add("spring.datasource.order.username", postgres::getUsername);
         registry.add("spring.datasource.order.password", postgres::getPassword);
         registry.add("spring.datasource.order.hikari.jdbcUrl", postgres::getJdbcUrl);
 
-        registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
-        registry.add("spring.kafka.producer.bootstrap-servers", kafka::getBootstrapServers);
-
-        registry.add("spring.kafka.producer.key-serializer", () -> "org.apache.kafka.common.serialization.StringSerializer");
-        registry.add("spring.kafka.producer.value-serializer", () -> "org.springframework.kafka.support.serializer.JsonSerializer");
 
     }
 
